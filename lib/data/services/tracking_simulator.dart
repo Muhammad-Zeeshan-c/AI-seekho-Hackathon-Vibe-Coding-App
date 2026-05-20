@@ -7,10 +7,22 @@ typedef TrackingCallback = void Function(LatLng position, double etaMinutes, Str
 
 /// Simulates a worker moving along a route towards the client's location.
 class TrackingSimulator {
+  final LatLng workerStart;
+  final LatLng clientLocation;
+  final int numPoints;
+
+  TrackingSimulator({
+    required this.workerStart,
+    required this.clientLocation,
+    this.numPoints = 15,
+  });
+
   Timer? _timer;
   int _currentWaypointIndex = 0;
   List<LatLng> _waypoints = [];
   
+  List<LatLng> get routePoints => _waypoints;
+
   /// Generates 15 linear interpolation coordinates between start and end.
   List<LatLng> _generateRouteWaypoints(LatLng start, LatLng end, {int steps = 15}) {
     final List<LatLng> points = [];
@@ -24,15 +36,10 @@ class TrackingSimulator {
   }
 
   /// Starts the live tracking simulation, firing the callback every 3 seconds
-  void startSimulation({
-    required LatLng start,
-    required LatLng end,
-    required TrackingCallback onUpdate,
-    required VoidCallback onArrival,
-  }) {
+  void startSimulation(void Function(LatLng pos, double eta) onUpdate) {
     stopSimulation();
     
-    _waypoints = _generateRouteWaypoints(start, end);
+    _waypoints = _generateRouteWaypoints(workerStart, clientLocation, steps: numPoints);
     _currentWaypointIndex = 0;
 
     _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
@@ -43,18 +50,11 @@ class TrackingSimulator {
         final double remainingFraction = 1.0 - (_currentWaypointIndex / (_waypoints.length - 1));
         final double etaMinutes = (remainingFraction * 12.0).clamp(0.5, 12.0);
         
-        String status = 'En Route';
-        if (_currentWaypointIndex == 0) {
-          status = 'Worker departed';
-        } else if (_currentWaypointIndex > _waypoints.length - 3) {
-          status = 'Almost arrived';
-        }
-
-        onUpdate(currentPosition, double.parse(etaMinutes.toStringAsFixed(1)), status);
+        onUpdate(currentPosition, double.parse(etaMinutes.toStringAsFixed(1)));
         _currentWaypointIndex++;
       } else {
         stopSimulation();
-        onArrival();
+        onUpdate(clientLocation, 0.0);
       }
     });
   }

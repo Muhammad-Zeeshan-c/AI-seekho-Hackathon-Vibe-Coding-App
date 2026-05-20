@@ -12,7 +12,7 @@ class AgentTraceScreen extends StatefulWidget {
 }
 
 class _AgentTraceScreenState extends State<AgentTraceScreen> {
-  List<LogEntry> _logs = [];
+  List<Map<String, dynamic>> _logs = [];
 
   @override
   void initState() {
@@ -20,9 +20,10 @@ class _AgentTraceScreenState extends State<AgentTraceScreen> {
     _loadLogs();
   }
 
-  void _loadLogs() {
+  Future<void> _loadLogs() async {
+    final logs = await LogService.getLogs();
     setState(() {
-      _logs = LogService.getLogs().reversed.toList();
+      _logs = logs.reversed.toList();
     });
   }
 
@@ -79,6 +80,11 @@ class _AgentTraceScreenState extends State<AgentTraceScreen> {
               itemCount: _logs.length,
               itemBuilder: (context, index) {
                 final log = _logs[index];
+                final level = log['type'] ?? 'INFO';
+                final timestampStr = log['timestamp'] as String? ?? DateTime.now().toIso8601String();
+                final timestamp = DateTime.parse(timestampStr);
+                final message = (log['data'] ?? {}).toString();
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(16),
@@ -94,22 +100,22 @@ class _AgentTraceScreenState extends State<AgentTraceScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            log.level,
+                            level,
                             style: AppTheme.monoStyle(
                               fontSize: 12,
-                              color: log.level == 'ERROR' ? AppTheme.errorRed : AppTheme.aiPurple,
+                              color: level == 'ERROR' ? AppTheme.errorRed : AppTheme.aiPurple,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            '${log.timestamp.hour.toString().padLeft(2, '0')}:${log.timestamp.minute.toString().padLeft(2, '0')}:${log.timestamp.second.toString().padLeft(2, '0')}',
+                            '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}',
                             style: AppTheme.monoStyle(fontSize: 10, color: AppTheme.textSecondary(context)),
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        log.message,
+                        message,
                         style: AppTheme.monoStyle(
                           fontSize: 13,
                           color: isDark ? AppTheme.textPrimaryDark : Colors.black87,

@@ -6,7 +6,7 @@ import '../../core/localization/language_notifier.dart';
 import '../../data/services/ai_orchestrator.dart';
 import '../../data/models/agent_trace_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 
 /// Premium AI chat interface — Gemini-style with agent reasoning stream
 class AiChatScreen extends ConsumerStatefulWidget {
@@ -22,7 +22,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final _aiOrchestrator = AiOrchestrator();
   bool _isThinking = false;
   bool _showReasoningPanel = false;
-  List<AgentStepTrace> _reasoningSteps = [];
+  List<AgentTraceModel> _reasoningSteps = [];
 
   // Chat messages: {role: 'user'|'ai', text: String, isCard: bool}
   final List<Map<String, dynamic>> _messages = [];
@@ -68,18 +68,21 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     _scrollToBottom();
 
     final locale = ref.read(languageNotifierProvider);
-    // Stream agent reasoning steps
-    await for (final step in _aiOrchestrator.processRequest(
+    
+    final sub = _aiOrchestrator.traceStream.listen((step) {
+      if (!mounted) return;
+      setState(() => _reasoningSteps.add(step));
+      _scrollToBottom();
+    });
+
+    await _aiOrchestrator.processRequest(
       userInput: text,
       userLat: 33.642, // mock
       userLng: 72.991, // mock
       appLanguage: locale.languageCode,
-    )) {
-      if (!mounted) return;
-      setState(() => _reasoningSteps.add(step));
-      _scrollToBottom();
-      await Future.delayed(const Duration(milliseconds: 400));
-    }
+    );
+    
+    await sub.cancel();
 
     if (!mounted) return;
 
@@ -113,7 +116,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       _initialized = true;
       _messages.add({
         'role': 'ai',
-        'text': l10n.languageCode == 'ur' 
+        'text': l10n.localeName == 'ur' 
             ? 'اسلام و علیکم! 👋 میں کام کار AI ہوں۔\n\nمجھے بتائیں آپکو کیا چاہیے — اردو، رومن اردو، یا انگلش میں۔ بالکل عام انداز میں بتائیں!\n\n_"مجھے G-13 میں AC ٹیکنیشن چاہیے"_'
             : 'Assalam-o-Alaikum! 👋 Main KaamKaar AI hun.\n\nMujhe bataein aapko kya chahiye — Urdu, Roman Urdu, ya English mein. Bilkul natural bolain!\n\n_"Mujhe G-13 mein AC technician chahiye"_',
         'isCard': false,
@@ -248,7 +251,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        '${step.agentName}: ${step.action}',
+                        '${step.stepName}: ${step.description}',
                         style: AppTheme.monoStyle(fontSize: 11, color: isDark ? AppTheme.textSecondaryDark : const Color(0xFF4C1D95)),
                       ),
                     ),
@@ -453,6 +456,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
   Widget _buildInputBar(BuildContext context, bool isDark) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
       decoration: BoxDecoration(
@@ -475,7 +479,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     child: TextField(
                       controller: _msgController,
                       decoration: InputDecoration(
-                        hintText: l10n.languageCode == 'ur' ? 'یہاں ٹائپ کریں...' : 'Bolo kya chahiye...',
+                        hintText: l10n.localeName == 'ur' ? 'یہاں ٹائپ کریں...' : 'Bolo kya chahiye...',
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,

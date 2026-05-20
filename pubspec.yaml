@@ -124,16 +124,4 @@ flutter:
     - family: NotoNastaliqUrdu
       fonts:
         - asset: assets/fonts/NotoNastaliqUrdu-Regular.ttf
-
-    - family: PlusJakartaSans
-      fonts:
-        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
-        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
-          weight: 700
-
-    - family: Inter
-      fonts:
-        - asset: assets/fonts/Inter-Regular.ttf
-        - asset: assets/fonts/Inter-Medium.ttf
-          weight: 500
   # see https://flutter.dev/to/font-from-package
