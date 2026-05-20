@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -7,9 +8,8 @@ import '../../core/theme/app_theme.dart';
 import '../../data/mock/mock_providers.dart';
 import '../../data/models/provider_model.dart';
 import '../../data/services/tracking_simulator.dart';
-import '../../data/services/log_service.dart';
 
-/// Active tracking map displaying live worker coordinates moving to the client
+/// Live worker tracking screen — Uber-style with animated marker + ETA countdown
 class TrackingScreen extends StatefulWidget {
   final String bookingId;
   final String providerId;
@@ -21,27 +21,57 @@ class TrackingScreen extends StatefulWidget {
 
 class _TrackingScreenState extends State<TrackingScreen> {
   late ProviderModel _provider;
-  final _mapController = MapController();
-  final _simulator = TrackingSimulator();
+  late MapController _mapController;
+  late TrackingSimulator _simulator;
 
-  // Simulated live state
-  LatLng _workerPosition = const LatLng(33.6844, 73.0479);
-  final LatLng _clientPosition = const LatLng(33.6920, 73.0610); // slightly offset G-13 coordinate
-  double _etaMinutes = 12.0;
-  String _statusText = 'Worker departing';
-  bool _arrived = false;
+  LatLng _workerPos = const LatLng(33.6938, 73.0652);
+  static const LatLng _clientPos = LatLng(33.6844, 73.0479);
+  double _etaMinutes = 18;
+  bool _workerArrived = false;
+  int _statusIndex = 2; // 0=confirmed,1=notified,2=enRoute,3=arrived,4=started,5=completed
+
+  static const _statuses = [
+    'Booking Confirmed',
+    'Worker Notified',
+    'Worker En Route',
+    'Worker Arrived',
+    'Service Started',
+    'Service Completed',
+  ];
 
   @override
   void initState() {
     super.initState();
+    _mapController = MapController();
     _provider = MockProviderDatabase.providers.firstWhere(
       (p) => p.id == widget.providerId,
       orElse: () => MockProviderDatabase.providers.first,
     );
-    // Worker starts at their mock location, client is at default coordinate
-    _workerPosition = LatLng(_provider.lat, _provider.lng);
 
-    _startTrackingSimulation();
+    _simulator = TrackingSimulator(
+      workerStart: _workerPos,
+      clientLocation: _clientPos,
+      numPoints: 20,
+    );
+
+    // Start movement simulation
+    _simulator.startSimulation((pos, eta) {
+      if (!mounted) return;
+      setState(() {
+        _workerPos = pos;
+        _etaMinutes = eta;
+      });
+      // Animate camera to follow worker
+      _mapController.move(pos, 15.0);
+
+      if (eta <= 0.5 && !_workerArrived) {
+        setState(() {
+          _workerArrived = true;
+          _statusIndex = 3;
+        });
+        _showArrivalBanner();
+      }
+    });
   }
 
   @override
@@ -50,140 +80,79 @@ class _TrackingScreenState extends State<TrackingScreen> {
     super.dispose();
   }
 
-  void _startTrackingSimulation() {
-    _simulator.startSimulation(
-      start: _workerPosition,
-      end: _clientPosition,
-      onUpdate: (position, eta, status) {
-        setState(() {
-          _workerPosition = position;
-          _etaMinutes = eta;
-          _statusText = status;
-        });
-        // Jitter map view occasionally to follow worker
-        _mapController.move(position, 14.5);
-        
-        LogService.logEvent('TRACKING_COORDS_UPDATE', {
-          'booking_id': widget.bookingId,
-          'lat': position.latitude,
-          'lng': position.longitude,
-          'eta': eta,
-        });
-      },
-      onArrival: () {
-        setState(() {
-          _arrived = true;
-          _statusText = 'Worker Arrived!';
-          _etaMinutes = 0;
-        });
-        LogService.logEvent('TRACKING_WORKER_ARRIVED', {
-          'booking_id': widget.bookingId,
-        });
-        _showArrivalDialog();
-      },
-    );
-  }
-
-  void _showArrivalDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Center(
-          child: Text(
-            'Worker Arrived! 🎉',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+  void _showArrivalBanner() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
           children: [
-            const Text(
-              'Aap ka worker pohanch chuka hai. Please kaam mukammal honay par rate aur review karein.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, height: 1.4),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                context.pop(); // close dialog
-                context.push('/feedback/${widget.bookingId}');
-              },
-              child: const Text('Complete & Review / جائزہ لیں'),
+            const Text('🎉', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: 10),
+            Text(
+              '${_provider.name.split(' ').first} has arrived!',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
             ),
           ],
         ),
+        backgroundColor: AppTheme.accent,
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: Stack(
         children: [
-          // OpenStreetMap container via flutter_map
+          // Full-screen map
           FlutterMap(
             mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _workerPosition,
-              initialZoom: 14.0,
+            options: const MapOptions(
+              initialCenter: LatLng(33.6891, 73.0565),
+              initialZoom: 14.5,
+              interactionOptions: InteractionOptions(
+                flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+              ),
             ),
             children: [
+              // Tile layer
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.kaamkaar.app',
+                userAgentPackageName: 'pk.kaamkaar.app',
               ),
-              
-              // Polyline connecting worker to client
+
+              // Route polyline (mock)
               PolylineLayer(
                 polylines: [
                   Polyline(
-                    points: [_workerPosition, _clientPosition],
+                    points: _simulator.routePoints,
                     strokeWidth: 4,
-                    color: AppTheme.primary,
+                    color: AppTheme.primary.withOpacity(0.8),
                   ),
                 ],
               ),
-              
-              // Markers Layer
+
+              // Client location (blue pulsing dot)
               MarkerLayer(
                 markers: [
-                  // Client Marker
                   Marker(
-                    point: _clientPosition,
-                    width: 45,
-                    height: 45,
-                    child: Container(
-                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                      padding: const EdgeInsets.all(4),
-                      child: const CircleAvatar(
-                        backgroundColor: AppTheme.accent,
-                        child: Icon(Icons.home_filled, color: Colors.white, size: 18),
-                      ),
-                    ),
+                    point: _clientPos,
+                    width: 60,
+                    height: 60,
+                    child: _PulsingDot(color: AppTheme.primary),
                   ),
-                  
-                  // Worker Marker
+                  // Worker marker
                   Marker(
-                    point: _workerPosition,
+                    point: _workerPos,
                     width: 50,
                     height: 50,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
-                      ),
-                      padding: const EdgeInsets.all(4),
-                      child: CircleAvatar(
-                        backgroundColor: AppTheme.primary,
-                        child: Text(
-                          _provider.name[0],
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                      ),
+                    child: _WorkerMarker(
+                      name: _provider.name[0],
+                      arrived: _workerArrived,
                     ),
                   ),
                 ],
@@ -191,152 +160,341 @@ class _TrackingScreenState extends State<TrackingScreen> {
             ],
           ),
 
-          // Top Header overlay
-          Positioned(
-            top: 50,
-            left: 20,
-            right: 20,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
-              ),
+          // Top bar
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    onPressed: () => context.pop(),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Booking ID: ${widget.bookingId}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        Text(
-                          'Status: $_statusText',
-                          style: const TextStyle(color: AppTheme.primary, fontSize: 12, fontWeight: FontWeight.w600),
-                        ),
-                      ],
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      width: 42, height: 42,
+                      decoration: BoxDecoration(
+                        color: isDark ? AppTheme.surface2Dark : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+                      ),
+                      child: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: AppTheme.textPrimary(context)),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.terminal_rounded, color: AppTheme.aiPurple),
-                    tooltip: 'View Agent trace',
-                    onPressed: () => context.push('/logs'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppTheme.surface2Dark : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10)],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8, height: 8,
+                            decoration: BoxDecoration(
+                              color: _workerArrived ? AppTheme.accent : AppTheme.secondary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _workerArrived ? '${_provider.name.split(" ").first} has arrived! 🎉' : '${_provider.name.split(" ").first} is on the way',
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.textPrimary(context)),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
 
-          // Bottom Worker Info sheet
-          Positioned(
-            bottom: 24,
-            left: 20,
-            right: 20,
-            child: Container(
-              padding: const EdgeInsets.all(20),
+          // ETA badge
+          if (!_workerArrived)
+            Positioned(
+              top: 100,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isDark ? AppTheme.surface2Dark : Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '${_etaMinutes.ceil()}',
+                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 26, color: AppTheme.accent),
+                    ),
+                    Text('min', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary(context))),
+                  ],
+                ),
+              ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2000.ms, color: AppTheme.accent.withOpacity(0.2)),
+            ),
+
+          // Bottom draggable sheet
+          DraggableScrollableSheet(
+            initialChildSize: 0.38,
+            minChildSize: 0.2,
+            maxChildSize: 0.75,
+            builder: (context, scrollController) => Container(
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 15, offset: Offset(0, 4))],
+                color: AppTheme.surface(context),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 20, offset: const Offset(0, -4))],
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: AppTheme.primary.withOpacity(0.1),
-                        radius: 26,
-                        child: Text(_provider.name[0], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _provider.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            Text(
-                              _provider.category,
-                              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Dynamic ETA Counter
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              _etaMinutes.toStringAsFixed(1),
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primary, fontSize: 18),
-                            ),
-                            const Text(
-                              'mins ETA',
-                              style: TextStyle(color: AppTheme.primary, fontSize: 10, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const Divider(height: 30),
-                  
-                  Row(
-                    children: [
-                      // Report Scam Button
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => context.push('/report?bookingId=${widget.bookingId}&providerId=${_provider.id}'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.errorRed,
-                            side: const BorderSide(color: AppTheme.errorRed),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                child: Column(
+                  children: [
+                    // Handle
+                    Container(
+                      margin: const EdgeInsets.only(top: 12, bottom: 16),
+                      width: 40, height: 4,
+                      decoration: BoxDecoration(color: AppTheme.divider(context), borderRadius: BorderRadius.circular(4)),
+                    ),
+
+                    // Worker info
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 26,
+                            backgroundColor: isDark ? AppTheme.primaryDark.withOpacity(0.2) : AppTheme.primary.withOpacity(0.1),
+                            child: Text(_provider.name[0], style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, color: isDark ? AppTheme.primaryDark : AppTheme.primary)),
                           ),
-                          child: const Text('⚠️ Report Scam'),
-                        ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(_provider.name, style: Theme.of(context).textTheme.titleMedium),
+                                Text('${_provider.category} · ⭐ ${_provider.rating}', style: Theme.of(context).textTheme.bodySmall),
+                              ],
+                            ),
+                          ),
+                          // Action buttons
+                          Row(
+                            children: [
+                              _ActionBtn(icon: Icons.call_rounded, color: AppTheme.accent, isDark: isDark, onTap: () {}),
+                              const SizedBox(width: 8),
+                              _ActionBtn(icon: Icons.chat_rounded, color: AppTheme.primary, isDark: isDark, onTap: () => context.push('/ai-chat')),
+                            ],
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      // Cancel Button
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            _simulator.stopSimulation();
-                            context.pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Booking Cancelled / آرڈر منسوخ کر دیا گیا')),
+                    ),
+
+                    const SizedBox(height: 20),
+                    Divider(color: AppTheme.divider(context), height: 1),
+                    const SizedBox(height: 16),
+
+                    // Status timeline
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Status Timeline', style: Theme.of(context).textTheme.titleSmall),
+                          const SizedBox(height: 14),
+                          ...List.generate(_statuses.length, (i) {
+                            final isDone = i <= _statusIndex;
+                            final isCurrent = i == _statusIndex;
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(
+                                children: [
+                                  Column(
+                                    children: [
+                                      Container(
+                                        width: 22, height: 22,
+                                        decoration: BoxDecoration(
+                                          color: isDone ? AppTheme.accent : (isDark ? AppTheme.surface2Dark : const Color(0xFFF0F2F5)),
+                                          shape: BoxShape.circle,
+                                          border: isCurrent ? Border.all(color: AppTheme.accent, width: 2) : null,
+                                        ),
+                                        child: isDone ? const Icon(Icons.check_rounded, size: 13, color: Colors.white) : null,
+                                      ),
+                                      if (i < _statuses.length - 1)
+                                        Container(
+                                          width: 2, height: 16,
+                                          color: i < _statusIndex ? AppTheme.accent : AppTheme.divider(context),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    _statuses[i],
+                                    style: TextStyle(
+                                      fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+                                      fontSize: 14,
+                                      color: isDone ? AppTheme.textPrimary(context) : AppTheme.textSecondary(context),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  if (isDone)
+                                    Text(
+                                      _getStatusTime(i),
+                                      style: TextStyle(fontSize: 11, color: AppTheme.textSecondary(context)),
+                                    ),
+                                ],
+                              ),
                             );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                          ),
-                          child: const Text('Cancel Job'),
-                        ),
+                          }),
+                        ],
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Cancel button
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: OutlinedButton(
+                        onPressed: () => _showCancelDialog(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.errorRed,
+                          side: BorderSide(color: AppTheme.errorRed.withOpacity(0.5)),
+                        ),
+                        child: const Text('Cancel Booking'),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
             ),
-          ).animate().slideY(begin: 0.2, end: 0, duration: 400.ms),
+          ),
         ],
+      ),
+    );
+  }
+
+  String _getStatusTime(int index) {
+    final now = DateTime.now();
+    final times = [
+      DateTime(now.year, now.month, now.day, now.hour, now.minute - 10),
+      DateTime(now.year, now.month, now.day, now.hour, now.minute - 9),
+      DateTime(now.year, now.month, now.day, now.hour, now.minute - 2),
+    ];
+    if (index < times.length) {
+      final t = times[index];
+      return '${t.hour}:${t.minute.toString().padLeft(2, '0')} ${t.hour >= 12 ? 'PM' : 'AM'}';
+    }
+    return '';
+  }
+
+  void _showCancelDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surface(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Cancel Booking?'),
+        content: const Text('Are you sure you want to cancel? The worker is already on the way.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Keep Booking')),
+          TextButton(
+            onPressed: () { Navigator.pop(ctx); context.go('/dashboard/user'); },
+            child: Text('Cancel', style: TextStyle(color: AppTheme.errorRed)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Pulsing blue dot for client location
+class _PulsingDot extends StatefulWidget {
+  final Color color;
+  const _PulsingDot({required this.color});
+
+  @override
+  State<_PulsingDot> createState() => _PulsingDotState();
+}
+
+class _PulsingDotState extends State<_PulsingDot> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(duration: const Duration(milliseconds: 1500), vsync: this)..repeat();
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) => Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 48 * _ctrl.value + 12,
+            height: 48 * _ctrl.value + 12,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: widget.color.withOpacity(0.15 * (1 - _ctrl.value)),
+            ),
+          ),
+          Container(
+            width: 16, height: 16,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color, border: Border.all(color: Colors.white, width: 2.5)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Worker marker — circular with initial and status ring
+class _WorkerMarker extends StatelessWidget {
+  final String name;
+  final bool arrived;
+  const _WorkerMarker({required this.name, required this.arrived});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 46, height: 46,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: arrived ? AppTheme.accent : AppTheme.secondary,
+        border: Border.all(color: Colors.white, width: 3),
+        boxShadow: [BoxShadow(color: (arrived ? AppTheme.accent : AppTheme.secondary).withOpacity(0.4), blurRadius: 12)],
+      ),
+      child: Center(
+        child: Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
+      ),
+    );
+  }
+}
+
+/// Small circular action button
+class _ActionBtn extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final bool isDark;
+  final VoidCallback onTap;
+  const _ActionBtn({required this.icon, required this.color, required this.isDark, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 42, height: 42,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: color, size: 20),
       ),
     );
   }

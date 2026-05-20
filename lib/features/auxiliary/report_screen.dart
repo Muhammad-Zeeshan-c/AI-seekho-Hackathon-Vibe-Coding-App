@@ -1,29 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
-import '../../data/services/log_service.dart';
 
-/// Screen allowing clients to file reports for safety or financial anomalies
+/// Screen to report a provider or issue
 class ReportScreen extends StatefulWidget {
-  final String bookingId;
   final String providerId;
-  const ReportScreen({super.key, required this.bookingId, required this.providerId});
+  const ReportScreen({super.key, required this.providerId});
 
   @override
   State<ReportScreen> createState() => _ReportScreenState();
 }
 
 class _ReportScreenState extends State<ReportScreen> {
+  String? _selectedReason;
   final _detailsController = TextEditingController();
+  bool _submitted = false;
+
   final List<String> _reasons = [
-    'Worker requested advance/upfront payment',
-    'Worker demanded extra cash above estimate',
-    'Worker did not show up at schedule',
-    'Mismatched profile name/photo in real life',
-    'Inappropriate language or behavior',
-    'Offered deals outside KaamKaar platform',
+    'Unprofessional behavior',
+    'Did not show up',
+    'Poor quality of work',
+    'Asked for extra money',
+    'Inappropriate language',
+    'Other',
   ];
-  final List<String> _selectedReasons = [];
 
   @override
   void dispose() {
@@ -31,139 +32,167 @@ class _ReportScreenState extends State<ReportScreen> {
     super.dispose();
   }
 
-  void _submitReport() async {
-    if (_selectedReasons.isEmpty) {
+  void _submit() async {
+    if (_selectedReason == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one reason / وجہ منتخب کریں')),
+        SnackBar(
+          content: const Text('Please select a reason'),
+          backgroundColor: AppTheme.errorRed,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
       return;
     }
-
-    await LogService.logEvent('COMPLIANCE_REPORT_FILED', {
-      'booking_id': widget.bookingId,
-      'provider_id': widget.providerId,
-      'reasons': _selectedReasons,
-      'details': _detailsController.text,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Report filed! Support team will review. / رپورٹ درج ہو گئی ہے')),
-      );
-      context.go('/dashboard/user');
-    }
+    setState(() => _submitted = true);
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (_submitted) {
+      return Scaffold(
+        backgroundColor: AppTheme.bg(context),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 80, height: 80,
+                  decoration: BoxDecoration(color: AppTheme.accent.withOpacity(0.15), shape: BoxShape.circle),
+                  child: const Center(child: Icon(Icons.shield_rounded, color: AppTheme.accent, size: 40)),
+                ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
+                const SizedBox(height: 24),
+                Text('Report Submitted', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                Text(
+                  'Our trust and safety team will review your report within 24 hours. We take these matters seriously.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () => context.pop(),
+                  child: const Text('Back to Home'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
-        title: const Text('⚠️ Report Scam / Complaint'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.surface(context),
+        leading: GestureDetector(
+          onTap: () => context.pop(),
+          child: Container(
+            margin: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.surface2Dark : const Color(0xFFF0F2F5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: AppTheme.textPrimary(context)),
+          ),
+        ),
+        title: Text('Report Issue', style: Theme.of(context).textTheme.titleLarge),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Security tip warning box
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.errorRed.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.errorRed.withOpacity(0.2)),
-                ),
-                child: Row(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.security_rounded, color: AppTheme.errorRed),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.errorRed.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppTheme.errorRed.withOpacity(0.3)),
+                      ),
+                      child: Row(
                         children: [
-                          const Text(
-                            'KaamKaar Security Protocol',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.errorRed, fontSize: 14),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Never send advance money in EasyPaisa/JazzCash before service completion. Report any suspicious requests below.',
-                            style: TextStyle(color: AppTheme.errorRed.withOpacity(0.9), fontSize: 12, height: 1.4),
+                          const Icon(Icons.info_outline_rounded, color: AppTheme.errorRed),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Reporting provider ${widget.providerId}. All reports are confidential.',
+                              style: const TextStyle(color: AppTheme.errorRed, fontSize: 13, fontWeight: FontWeight.w600),
+                            ),
                           ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text('Why are you reporting?', style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 12),
+                    ..._reasons.map((reason) {
+                      final isSelected = _selectedReason == reason;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedReason = reason),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isSelected ? (isDark ? AppTheme.primaryDark.withOpacity(0.15) : AppTheme.primary.withOpacity(0.08)) : AppTheme.surface(context),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isSelected ? (isDark ? AppTheme.primaryDark : AppTheme.primary) : AppTheme.divider(context),
+                              width: isSelected ? 1.5 : 0.5,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 20, height: 20,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isSelected ? (isDark ? AppTheme.primaryDark : AppTheme.primary) : AppTheme.textSecondary(context),
+                                    width: isSelected ? 6 : 1.5,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(reason, style: TextStyle(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, color: AppTheme.textPrimary(context))),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 24),
+                    Text('Additional Details', style: Theme.of(context).textTheme.titleSmall),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _detailsController,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        hintText: 'Please provide more details about the incident...',
+                        alignLabelWithHint: true,
                       ),
                     ),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 28),
-
-              const Text(
-                'Select Violation Reason(s)',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+              decoration: BoxDecoration(color: AppTheme.surface(context), border: Border(top: BorderSide(color: AppTheme.divider(context), width: 0.5))),
+              child: ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorRed),
+                child: const Text('Submit Report', style: TextStyle(color: Colors.white)),
               ),
-              const SizedBox(height: 12),
-
-              // Checklist of violations
-              Column(
-                children: _reasons.map((reason) {
-                  final isSelected = _selectedReasons.contains(reason);
-                  return CheckboxListTile(
-                    title: Text(reason, style: const TextStyle(fontSize: 13)),
-                    value: isSelected,
-                    activeColor: AppTheme.errorRed,
-                    contentPadding: EdgeInsets.zero,
-                    onChanged: (val) {
-                      setState(() {
-                        if (val == true) {
-                          _selectedReasons.add(reason);
-                        } else {
-                          _selectedReasons.remove(reason);
-                        }
-                      });
-                    },
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Text descriptions
-              const Text('Add Details / تفصیلات لکھیں', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _detailsController,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: 'Describe exactly what happened...',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // CTA
-              ElevatedButton(
-                onPressed: _submitReport,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.errorRed,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('File Scam Report / رپورٹ درج کریں'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
