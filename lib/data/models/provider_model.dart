@@ -61,18 +61,21 @@ class ProviderModel {
   factory ProviderModel.fromJson(Map<String, dynamic> json) => ProviderModel(
         id: json['id'] as String,
         name: json['name'] as String,
-        category: json['category'] as String? ?? 'General',
-        subcategories: List<String>.from(json['subcategories'] as List? ?? []),
+        category: json['category'] as String? ??
+            ((json['service_types'] as List?)?.isNotEmpty == true
+                ? (json['service_types'] as List).first as String
+                : 'General'),
+        subcategories: List<String>.from(json['subcategories'] as List? ?? json['service_types'] as List? ?? []),
         phone: json['phone'] as String? ?? '',
         photo: json['photo'] as String? ?? '',
         rating: (json['rating'] as num? ?? 5.0).toDouble(),
         reviewCount: json['reviewCount'] as int? ?? json['reviews_count'] as int? ?? 0,
         rateType: json['rateType'] as String? ?? json['rate_type'] as String? ?? 'fixed',
         rateAmount: (json['rateAmount'] as num? ?? json['rate_amount'] as num? ?? 0.0).toDouble(),
-        yearsExperience: json['yearsExperience'] as int? ?? json['years_experience'] as int? ?? 0,
+        yearsExperience: json['yearsExperience'] as int? ?? json['years_experience'] as int? ?? json['experience_years'] as int? ?? 0,
         verified: json['verified'] as bool? ?? json['is_verified'] as bool? ?? false,
-        lat: (json['lat'] as num? ?? 0.0).toDouble(),
-        lng: (json['lng'] as num? ?? 0.0).toDouble(),
+        lat: (json['lat'] as num? ?? (json['location'] as Map?)?['lat'] as num? ?? 0.0).toDouble(),
+        lng: (json['lng'] as num? ?? (json['location'] as Map?)?['lng'] as num? ?? 0.0).toDouble(),
         serviceRadiusKm: (json['serviceRadiusKm'] as num? ?? json['service_radius_km'] as num? ?? 5.0).toDouble(),
         availableDays: List<String>.from(json['availableDays'] as List? ?? json['available_days'] as List? ?? []),
         availableSlots: List<String>.from(json['availableSlots'] as List? ?? json['available_slots'] as List? ?? []),
@@ -84,7 +87,7 @@ class ProviderModel {
             .map((r) => ReviewModel.fromJson(r as Map<String, dynamic>))
             .toList(),
         workPhotos: List<String>.from(json['workPhotos'] as List? ?? json['work_photos'] as List? ?? []),
-        distanceKm: (json['distance_km'] as num?)?.toDouble(),
+        distanceKm: (json['distance_km'] as num? ?? (json['distance'] as num?))?.toDouble(),
         reasoning: json['reasoning'] as String?,
       );
 

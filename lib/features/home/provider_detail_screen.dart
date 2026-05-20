@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/mock/mock_providers.dart';
 import '../../data/models/provider_model.dart';
+import '../../data/services/api_service.dart';
 import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 
 /// Full provider profile — tabbed: About | Reviews | Portfolio
@@ -18,15 +19,54 @@ class ProviderDetailScreen extends StatefulWidget {
 class _ProviderDetailScreenState extends State<ProviderDetailScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late ProviderModel _provider;
+  bool _isLoading = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _provider = MockProviderDatabase.providers.firstWhere(
-      (p) => p.id == widget.providerId,
-      orElse: () => MockProviderDatabase.providers.first,
-    );
+    
+    // Check mock first for offline/instant loading
+    final mockMatches = MockProviderDatabase.providers.where((p) => p.id == widget.providerId);
+    if (mockMatches.isNotEmpty) {
+      _provider = mockMatches.first;
+    } else {
+      // Fallback profile until fetched from backend
+      _provider = MockProviderDatabase.providers.first;
+      _loadProviderFromBackend();
+    }
+  }
+
+  Future<void> _loadProviderFromBackend() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final list = await ApiService.getProviders();
+      final backendMatch = list.where((p) => p.id == widget.providerId);
+      if (backendMatch.isNotEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _provider = backendMatch.first;
+          _isLoading = false;
+        });
+      } else {
+        if (!mounted) return;
+        setState(() {
+          _error = 'Provider profile not found';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to load profile: $e';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -43,7 +83,23 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
-      body: NestedScrollView(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(_error!, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: _loadProviderFromBackend,
+                        child: const Text('Try Again'),
+                      ),
+                    ],
+                  ),
+                )
+              : NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           // Collapsible header
           SliverAppBar(
@@ -214,6 +270,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
   }
 
   Widget _buildAboutTab(BuildContext context, bool isDark, int etaMin) {
+    final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(

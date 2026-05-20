@@ -4,6 +4,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 
+import '../../data/services/auth_service.dart';
+import '../../core/constants/app_constants.dart';
+
 /// Multi-step registration screen for both clients and workers.
 /// Worker registration has additional steps for profile and services.
 class RegisterScreen extends StatefulWidget {
@@ -77,11 +80,60 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
+
+    if (name.isEmpty || phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in your name and phone number')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1200));
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    context.go('/dashboard/${widget.role == "provider" ? "provider" : "user"}');
+
+    // Auto-generate credentials compatible with the backend email/password scheme
+    final email = '$phone@kaamkaar.pk';
+    final password = 'PkKaamkaar123!_$phone';
+
+    final extra = _isWorker
+        ? {
+            'cnic': _cnicController.text.trim(),
+            'experience_years': _experienceYears,
+            'price_range': 'PKR ${_rateAmount.round()}${_rateType == 'hourly' ? '/hr' : ''}',
+            'bio': _bioController.text.trim(),
+            'service_types': _selectedCategories.isEmpty ? ['General'] : _selectedCategories,
+            'location': {
+              'area': _selectedCity,
+              'lat': kDefaultLat,
+              'lng': kDefaultLng,
+            }
+          }
+        : {
+            'location': _selectedCity,
+          };
+
+    try {
+      await AuthService.register(
+        name: name,
+        email: email,
+        password: password,
+        phone: phone,
+        role: widget.role,
+        extra: extra,
+      );
+      if (!mounted) return;
+      context.go('/dashboard/${widget.role == "provider" ? "provider" : "user"}');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Registration failed: ${e.toString().replaceFirst('Exception: ', '')}'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override

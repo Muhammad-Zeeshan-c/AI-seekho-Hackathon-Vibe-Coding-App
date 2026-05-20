@@ -5,6 +5,8 @@ import 'package:confetti/confetti.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/mock/mock_providers.dart';
 import '../../data/models/provider_model.dart';
+import '../../data/models/booking_model.dart';
+import '../../data/services/api_service.dart';
 import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 
 /// Instant booking confirmation — no time slot picker, on-demand like Uber.
@@ -24,6 +26,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
 
   bool _isConfirmed = false;
   bool _isLoading = false;
+  BookingModel? _createdBooking;
 
   // Quick issue tags — user can tap instead of typing
   final List<String> _quickTags = [
@@ -34,11 +37,45 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
   @override
   void initState() {
     super.initState();
-    _provider = MockProviderDatabase.providers.firstWhere(
-      (p) => p.id == widget.providerId,
-      orElse: () => MockProviderDatabase.providers.first,
-    );
     _confetti = ConfettiController(duration: const Duration(seconds: 3));
+    
+    // Check mock first for offline/instant loading
+    final mockMatches = MockProviderDatabase.providers.where((p) => p.id == widget.providerId);
+    if (mockMatches.isNotEmpty) {
+      _provider = mockMatches.first;
+    } else {
+      // Fallback profile until fetched from backend
+      _provider = MockProviderDatabase.providers.first;
+      _loadProviderFromBackend();
+    }
+  }
+
+  Future<void> _loadProviderFromBackend() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final list = await ApiService.getProviders();
+      final backendMatch = list.where((p) => p.id == widget.providerId);
+      if (backendMatch.isNotEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _provider = backendMatch.first;
+          _isLoading = false;
+        });
+      } else {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -49,19 +86,38 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
   }
 
   Future<void> _confirmBooking() async {
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1200));
-    if (!mounted) return;
     setState(() {
-      _isLoading = false;
-      _isConfirmed = true;
+      _isLoading = true;
     });
-    _confetti.play();
+    try {
+      final booking = await ApiService.confirmBooking(
+        provider: _provider,
+        intent: {
+          'issue': _notesController.text,
+          'tags': _selectedTags,
+        },
+        selectedSlot: 'now',
+      );
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _createdBooking = booking;
+        _isConfirmed = true;
+      });
+      _confetti.play();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to book: $e')),
+      );
+    }
   }
 
   String get _bookingId {
-    final ts = DateTime.now().millisecondsSinceEpoch % 10000;
-    return 'KAK-2026-$ts';
+    return _createdBooking?.id ?? 'KAK-2026-fallback';
   }
 
   @override

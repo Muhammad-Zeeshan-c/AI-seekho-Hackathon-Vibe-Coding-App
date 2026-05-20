@@ -1,7 +1,9 @@
 // KaamKaar core application constants
 
-/// API Base URL (For Android Emulator pointing to local machine: http://10.0.2.2:3000/api)
-const String kApiBaseUrl = 'http://10.0.2.2:3000/api';
+import 'package:flutter/foundation.dart';
+
+/// API Base URL (For Android Emulator pointing to local machine: http://10.0.2.2:3000/api, for web: http://localhost:3000/api)
+const String kApiBaseUrl = kIsWeb ? 'http://localhost:3000/api' : 'http://10.0.2.2:3000/api';
 
 /// DiceBear avatar base URL for generating random profile icons
 const String kAvatarBaseUrl = 'https://api.dicebear.com/7.x/initials/svg?seed=';

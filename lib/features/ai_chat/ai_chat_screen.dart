@@ -5,6 +5,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/localization/language_notifier.dart';
 import '../../data/services/ai_orchestrator.dart';
 import '../../data/models/agent_trace_model.dart';
+import '../../data/models/provider_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 
@@ -75,16 +76,25 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       _scrollToBottom();
     });
 
-    await _aiOrchestrator.processRequest(
-      userInput: text,
-      userLat: 33.642, // mock
-      userLng: 72.991, // mock
-      appLanguage: locale.languageCode,
-    );
+    Map<String, dynamic>? result;
+    try {
+      result = await _aiOrchestrator.processRequest(
+        userInput: text,
+        userLat: 33.6844,
+        userLng: 73.0479,
+        appLanguage: locale.languageCode,
+      );
+    } catch (e) {
+      // Handled inside AI orchestrator stream
+    }
     
     await sub.cancel();
 
     if (!mounted) return;
+
+    final List<ProviderModel> matchedProviders = result != null
+        ? result['providers'] as List<ProviderModel>? ?? []
+        : [];
 
     // Final AI response
     setState(() {
@@ -95,7 +105,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         'isCard': false,
       });
       // Inject provider results card
-      _messages.add({'role': 'ai', 'text': '', 'isCard': true});
+      _messages.add({
+        'role': 'ai',
+        'text': '',
+        'isCard': true,
+        'providers': matchedProviders,
+      });
     });
     _scrollToBottom();
   }
@@ -195,7 +210,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   return _buildTypingIndicator(context, isDark);
                 }
                 final msg = _messages[i];
-                if (msg['isCard'] == true) return _buildProviderMiniCards(context, isDark);
+                if (msg['isCard'] == true) return _buildProviderMiniCards(context, isDark, msg);
                 return _buildChatBubble(context, isDark, msg);
               },
             ),
@@ -353,8 +368,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
-  Widget _buildProviderMiniCards(BuildContext context, bool isDark) {
-    final providers = MockProviderDatabase_placeholder.placeholders;
+  Widget _buildProviderMiniCards(BuildContext context, bool isDark, Map<String, dynamic> msg) {
+    final List<ProviderModel> providers = msg['providers'] as List<ProviderModel>? ?? [];
+    if (providers.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(left: 38, bottom: 8),
+        child: Text('No matching providers found.', style: TextStyle(color: AppTheme.textSecondary(context))),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -363,17 +384,18 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           child: Text('Top matches found 👇', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary(context), fontWeight: FontWeight.w600)),
         ),
         SizedBox(
-          height: 120,
+          height: 130,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.only(left: 38),
             itemCount: providers.length,
             itemBuilder: (context, i) {
               final p = providers[i];
+              final eta = p.distanceKm != null ? "${(p.distanceKm! * 4 + 5).toInt()} min" : "15 min";
               return GestureDetector(
-                onTap: () => context.push('/provider/${p['id']}'),
+                onTap: () => context.push('/provider/${p.id}'),
                 child: Container(
-                  width: 150,
+                  width: 160,
                   margin: const EdgeInsets.only(right: 10, bottom: 8),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -394,16 +416,26 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                           decoration: BoxDecoration(gradient: AppTheme.primaryGradient, borderRadius: BorderRadius.circular(6)),
                           child: const Text('🤖 Top Pick', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
                         ),
-                      Text(p['name']!, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.textPrimary(context))),
-                      Text(p['category']!, style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        p.name,
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.textPrimary(context)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        p.category,
+                        style: Theme.of(context).textTheme.bodySmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const Spacer(),
                       Row(
                         children: [
                           const Icon(Icons.star_rounded, size: 12, color: Colors.amber),
                           const SizedBox(width: 2),
-                          Text(p['rating']!, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.textPrimary(context))),
+                          Text(p.rating.toStringAsFixed(1), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.textPrimary(context))),
                           const Spacer(),
-                          Text('~${p['eta']}', style: TextStyle(fontSize: 11, color: AppTheme.accent, fontWeight: FontWeight.w600)),
+                          Text('~$eta', style: TextStyle(fontSize: 11, color: AppTheme.accent, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ],
@@ -417,7 +449,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         Padding(
           padding: const EdgeInsets.only(left: 38),
           child: GestureDetector(
-            onTap: () => context.push('/results?category=All'),
+            onTap: () => context.push('/results?category=${providers.first.category}'),
             child: Text(
               'See all providers →',
               style: TextStyle(color: isDark ? AppTheme.primaryDark : AppTheme.primary, fontWeight: FontWeight.w700, fontSize: 13),

@@ -185,11 +185,11 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
           type: BottomNavigationBarType.fixed,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11),
           unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
-          items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home_filled), label: l10n.urdu == 'اردو' ? 'ڈیش بورڈ' : 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined), activeIcon: Icon(Icons.receipt_long_rounded), label: l10n.bookings),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart_rounded), activeIcon: Icon(Icons.bar_chart_rounded), label: l10n.earnings),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), activeIcon: Icon(Icons.person_rounded), label: l10n.profile),
+          items: [
+            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home_filled), label: l10n.urdu == 'اردو' ? 'ڈیش بورڈ' : 'Dashboard'),
+            BottomNavigationBarItem(icon: const Icon(Icons.receipt_long_outlined), activeIcon: const Icon(Icons.receipt_long_rounded), label: l10n.bookings),
+            BottomNavigationBarItem(icon: const Icon(Icons.bar_chart_rounded), activeIcon: const Icon(Icons.bar_chart_rounded), label: l10n.earnings),
+            BottomNavigationBarItem(icon: const Icon(Icons.person_outline_rounded), activeIcon: const Icon(Icons.person_rounded), label: l10n.profile),
           ],
           onTap: (i) { if (i == 1) context.push('/history'); },
           currentIndex: 0,

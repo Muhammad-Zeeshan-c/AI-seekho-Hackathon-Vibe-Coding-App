@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/services/auth_service.dart';
 
 /// Premium login screen for both clients and workers.
 /// Uses phone number auth (Firebase OTP in Phase 2).
@@ -38,16 +39,43 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     super.dispose();
   }
 
-  /// Validates and navigates to appropriate dashboard (Phase 2: real OTP)
+  /// Validates and logs in with backend API
   void _continue() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    // Phase 1: direct login — Phase 2 will send OTP via Firebase Phone Auth
+
     final role = _tabController.index == 0 ? 'user' : 'provider';
-    context.go('/dashboard/$role');
+    final phone = _phoneController.text.trim();
+    
+    // Auto-generate credentials compatible with the backend email/password scheme
+    final email = '$phone@kaamkaar.pk';
+    final password = 'PkKaamkaar123!_$phone';
+
+    try {
+      await AuthService.login(
+        email: email,
+        password: password,
+        role: role,
+      );
+      if (!mounted) return;
+      context.go('/dashboard/$role');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      
+      // Prompt user to sign up if account doesn't exist
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Account not found. Please sign up first.'),
+          backgroundColor: Colors.redAccent,
+          action: SnackBarAction(
+            label: 'Sign Up',
+            textColor: Colors.white,
+            onPressed: () => context.push('/register/$role'),
+          ),
+        ),
+      );
+    }
   }
 
   @override

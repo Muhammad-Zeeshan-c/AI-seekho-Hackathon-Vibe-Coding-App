@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
 
+import '../../data/services/auth_service.dart';
+import '../../data/models/user_model.dart';
+
 /// Premium animated splash screen with neural-pulse ring animation
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -36,6 +39,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
     // Navigate after 3 seconds
     Future.delayed(const Duration(milliseconds: 3000), () async {
       if (mounted) {
+        final session = await AuthService.restoreSession();
+        if (session != null) {
+          final user = session['user'] as UserModel;
+          context.go('/dashboard/${user.role}');
+          return;
+        }
+
         final prefs = await SharedPreferences.getInstance();
         final hasLanguage = prefs.getString('app_language') != null;
         if (hasLanguage) {

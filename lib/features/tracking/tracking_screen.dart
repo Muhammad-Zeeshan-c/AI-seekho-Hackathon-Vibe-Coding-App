@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/mock/mock_providers.dart';
 import '../../data/models/provider_model.dart';
 import '../../data/services/tracking_simulator.dart';
+import '../../data/services/api_service.dart';
 import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 
 /// Live worker tracking screen — Uber-style with animated marker + ETA countdown
@@ -29,6 +30,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   double _etaMinutes = 18;
   bool _workerArrived = false;
   int _statusIndex = 2; // 0=confirmed,1=notified,2=enRoute,3=arrived,4=started,5=completed
+  bool _isLoading = false;
 
   static const _statuses = [
     'Booking Confirmed',
@@ -43,10 +45,14 @@ class _TrackingScreenState extends State<TrackingScreen> {
   void initState() {
     super.initState();
     _mapController = MapController();
-    _provider = MockProviderDatabase.providers.firstWhere(
-      (p) => p.id == widget.providerId,
-      orElse: () => MockProviderDatabase.providers.first,
-    );
+    
+    final mockMatches = MockProviderDatabase.providers.where((p) => p.id == widget.providerId);
+    if (mockMatches.isNotEmpty) {
+      _provider = mockMatches.first;
+    } else {
+      _provider = MockProviderDatabase.providers.first;
+      _loadProviderFromBackend();
+    }
 
     _simulator = TrackingSimulator(
       workerStart: _workerPos,
@@ -74,6 +80,34 @@ class _TrackingScreenState extends State<TrackingScreen> {
         }
       }
     });
+  }
+
+  Future<void> _loadProviderFromBackend() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final list = await ApiService.getProviders();
+      final backendMatch = list.where((p) => p.id == widget.providerId);
+      if (backendMatch.isNotEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _provider = backendMatch.first;
+          _isLoading = false;
+        });
+      } else {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
