@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
 
 /// Premium animated splash screen with neural-pulse ring animation
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late AnimationController _ringController;
 
@@ -32,8 +34,16 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     )..repeat();
 
     // Navigate after 3 seconds
-    Future.delayed(const Duration(milliseconds: 3000), () {
-      if (mounted) context.go('/language');
+    Future.delayed(const Duration(milliseconds: 3000), () async {
+      if (mounted) {
+        final prefs = await SharedPreferences.getInstance();
+        final hasLanguage = prefs.getString('app_language') != null;
+        if (hasLanguage) {
+          context.go('/role');
+        } else {
+          context.go('/language');
+        }
+      }
     });
   }
 

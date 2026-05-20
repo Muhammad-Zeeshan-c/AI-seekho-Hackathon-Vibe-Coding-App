@@ -1,35 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/localization/language_notifier.dart';
 
-/// Language selection screen — choose between Urdu, Roman Urdu, or English
-class LanguageScreen extends StatefulWidget {
+/// Language selection screen — choose between Urdu or English
+class LanguageScreen extends ConsumerStatefulWidget {
   const LanguageScreen({super.key});
 
   @override
-  State<LanguageScreen> createState() => _LanguageScreenState();
+  ConsumerState<LanguageScreen> createState() => _LanguageScreenState();
 }
 
-class _LanguageScreenState extends State<LanguageScreen> {
-  String? _selected;
+class _LanguageScreenState extends ConsumerState<LanguageScreen> {
+  // Pre-select English
+  String _selectedCode = 'en';
 
-  static const _languages = [
-    {'code': 'ur', 'label': 'اردو', 'sublabel': 'Urdu', 'flag': '🇵🇰', 'description': 'آپ کی پسندیدہ زبان'},
-    {'code': 'roman', 'label': 'Roman Urdu', 'sublabel': 'Romanized Urdu', 'flag': '🇵🇰', 'description': 'Jaise aap bolte hain'},
-    {'code': 'en', 'label': 'English', 'sublabel': 'English', 'flag': '🇬🇧', 'description': 'For English speakers'},
-  ];
-
-  void _selectAndContinue(String code) {
-    setState(() => _selected = code);
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) context.go('/role');
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Set default without saving to prefs yet
+      ref.read(languageNotifierProvider.notifier).state = const Locale('en');
     });
+  }
+
+  void _selectLanguage(String code) {
+    setState(() => _selectedCode = code);
+    ref.read(languageNotifierProvider.notifier).state = Locale(code);
+  }
+
+  void _continue() async {
+    await ref.read(languageNotifierProvider.notifier).setLanguage(_selectedCode);
+    if (mounted) context.go('/role');
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
+
+    // If l10n is null (building before delegates load), return empty
+    if (l10n == null) return const Scaffold();
 
     return Scaffold(
       body: SafeArea(
@@ -40,55 +54,44 @@ class _LanguageScreenState extends State<LanguageScreen> {
             children: [
               const SizedBox(height: 48),
 
-              // Header
+              // Header (Localized)
               Text(
-                'Choose Language',
+                l10n.chooseLanguage,
                 style: Theme.of(context).textTheme.displayMedium,
               ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0),
 
-              const SizedBox(height: 8),
-              Text(
-                'زبان منتخب کریں',
-                style: AppTheme.urduStyle(
-                  fontSize: 20,
-                  color: AppTheme.textSecondary(context),
-                ),
-              ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
-
               const SizedBox(height: 48),
 
-              // Language options
-              ...List.generate(_languages.length, (i) {
-                final lang = _languages[i];
-                final isSelected = _selected == lang['code'];
+              // English Option
+              _LanguageCard(
+                flag: '🇬🇧',
+                label: 'English',
+                description: 'For English speakers',
+                isSelected: _selectedCode == 'en',
+                isDark: isDark,
+                onTap: () => _selectLanguage('en'),
+              ).animate(delay: 100.ms).fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0),
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: _LanguageCard(
-                    flag: lang['flag']!,
-                    label: lang['label']!,
-                    sublabel: lang['sublabel']!,
-                    description: lang['description']!,
-                    isSelected: isSelected,
-                    onTap: () => _selectAndContinue(lang['code']!),
-                    isDark: isDark,
-                  ),
-                ).animate(delay: (150 * i).ms).fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0);
-              }),
+              const SizedBox(height: 16),
+
+              // Urdu Option
+              _LanguageCard(
+                flag: '🇵🇰',
+                label: 'اردو',
+                description: 'اپنی پسندیدہ زبان منتخب کریں',
+                isSelected: _selectedCode == 'ur',
+                isDark: isDark,
+                onTap: () => _selectLanguage('ur'),
+              ).animate(delay: 200.ms).fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0),
 
               const Spacer(),
 
-              // Skip
-              Center(
-                child: TextButton(
-                  onPressed: () => context.go('/role'),
-                  child: Text(
-                    'Skip for now',
-                    style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 14),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
+              // Continue Button
+              ElevatedButton(
+                onPressed: _continue,
+                child: Text(l10n.continueButton),
+              ).animate(delay: 300.ms).fadeIn(duration: 400.ms),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -98,14 +101,13 @@ class _LanguageScreenState extends State<LanguageScreen> {
 }
 
 class _LanguageCard extends StatelessWidget {
-  final String flag, label, sublabel, description;
+  final String flag, label, description;
   final bool isSelected, isDark;
   final VoidCallback onTap;
 
   const _LanguageCard({
     required this.flag,
     required this.label,
-    required this.sublabel,
     required this.description,
     required this.isSelected,
     required this.isDark,
@@ -131,7 +133,7 @@ class _LanguageCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Flag emoji in circle
+            // Flag emoji
             Container(
               width: 52,
               height: 52,
@@ -152,14 +154,21 @@ class _LanguageCard extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: isSelected ? AppTheme.primary : AppTheme.textPrimary(context),
-                        ),
+                    style: TextStyle(
+                      fontFamily: label == 'اردو' ? 'JameelNooriNastaleeq' : 'PlusJakartaSans',
+                      fontSize: label == 'اردو' ? 24 : 18,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? AppTheme.primary : AppTheme.textPrimary(context),
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     description,
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: TextStyle(
+                      fontFamily: label == 'اردو' ? 'NotoNastaliqUrdu' : 'Inter',
+                      fontSize: label == 'اردو' ? 14 : 12,
+                      color: AppTheme.textSecondary(context),
+                    ),
                   ),
                 ],
               ),

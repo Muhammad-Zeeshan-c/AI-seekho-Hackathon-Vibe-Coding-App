@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// KaamKaar's premium design system.
-/// Supports both light and dark (true black AMOLED) modes.
+/// Supports both light and dark (true black AMOLED) modes and RTL/Urdu typography.
 class AppTheme {
   // === Brand Colors ===
   static const Color primary = Color(0xFF1A7FE8); // KaamKaar Blue
@@ -40,7 +40,11 @@ class AppTheme {
   );
 
   // ================= LIGHT THEME =================
-  static ThemeData get lightTheme {
+  static ThemeData lightTheme(bool isUrdu) {
+    final textTheme = isUrdu 
+        ? _buildUrduTextTheme(textPrimaryLight, textSecondaryLight)
+        : _buildEnglishTextTheme(textPrimaryLight, textSecondaryLight);
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
@@ -54,56 +58,32 @@ class AppTheme {
         onSurface: textPrimaryLight,
       ),
       scaffoldBackgroundColor: backgroundLight,
-      // Card theme
+      textTheme: textTheme,
       cardTheme: CardThemeData(
         color: surfaceLight,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         shadowColor: Colors.black.withOpacity(0.08),
       ),
-      // AppBar
       appBarTheme: AppBarTheme(
         backgroundColor: surfaceLight,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
-        titleTextStyle: GoogleFonts.plusJakartaSans(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: textPrimaryLight,
-        ),
+        titleTextStyle: textTheme.titleLarge,
         iconTheme: const IconThemeData(color: textPrimaryLight),
       ),
-      // Typography
-      textTheme: _buildTextTheme(textPrimaryLight, textSecondaryLight),
-      // Input fields
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: const Color(0xFFF0F2F5),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: errorRed, width: 1.5),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: primary, width: 1.5)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: errorRed, width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        hintStyle: GoogleFonts.inter(
-          fontSize: 15,
-          color: textSecondaryLight,
-        ),
+        hintStyle: textTheme.bodyMedium?.copyWith(color: textSecondaryLight),
       ),
-      // Elevated Button
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primary,
@@ -111,50 +91,43 @@ class AppTheme {
           elevation: 0,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: GoogleFonts.plusJakartaSans(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          textStyle: textTheme.titleMedium?.copyWith(color: Colors.white),
         ),
       ),
-      // Outlined Button
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primary,
           minimumSize: const Size(double.infinity, 52),
           side: const BorderSide(color: primary, width: 1.5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: GoogleFonts.plusJakartaSans(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          textStyle: textTheme.titleMedium,
         ),
       ),
-      // Bottom nav
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: surfaceLight,
         selectedItemColor: primary,
         unselectedItemColor: textSecondaryLight,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
+        selectedLabelStyle: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
+        unselectedLabelStyle: textTheme.labelSmall,
       ),
-      // Chip
       chipTheme: ChipThemeData(
         backgroundColor: const Color(0xFFF0F2F5),
-        labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+        labelStyle: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
-      // Divider
-      dividerTheme: const DividerThemeData(
-        color: Color(0xFFEEEEEE),
-        thickness: 1,
-      ),
+      dividerTheme: const DividerThemeData(color: Color(0xFFEEEEEE), thickness: 1),
     );
   }
 
   // ================= DARK THEME =================
-  static ThemeData get darkTheme {
+  static ThemeData darkTheme(bool isUrdu) {
+    final textTheme = isUrdu 
+        ? _buildUrduTextTheme(textPrimaryDark, textSecondaryDark)
+        : _buildEnglishTextTheme(textPrimaryDark, textSecondaryDark);
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
@@ -168,7 +141,7 @@ class AppTheme {
         onSurface: textPrimaryDark,
       ),
       scaffoldBackgroundColor: backgroundDark,
-      // Card theme
+      textTheme: textTheme,
       cardTheme: CardThemeData(
         color: surfaceDark,
         elevation: 0,
@@ -177,49 +150,25 @@ class AppTheme {
           side: const BorderSide(color: dividerDark, width: 0.5),
         ),
       ),
-      // AppBar
       appBarTheme: AppBarTheme(
         backgroundColor: backgroundDark,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         systemOverlayStyle: SystemUiOverlayStyle.light,
-        titleTextStyle: GoogleFonts.plusJakartaSans(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: textPrimaryDark,
-        ),
+        titleTextStyle: textTheme.titleLarge,
         iconTheme: const IconThemeData(color: textPrimaryDark),
       ),
-      // Typography
-      textTheme: _buildTextTheme(textPrimaryDark, textSecondaryDark),
-      // Input fields
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface2Dark,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: dividerDark, width: 0.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: primaryDark, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: errorRed, width: 1.5),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: dividerDark, width: 0.5)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: primaryDark, width: 1.5)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: errorRed, width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        hintStyle: GoogleFonts.inter(
-          fontSize: 15,
-          color: textSecondaryDark,
-        ),
+        hintStyle: textTheme.bodyMedium?.copyWith(color: textSecondaryDark),
       ),
-      // Elevated Button
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryDark,
@@ -227,81 +176,70 @@ class AppTheme {
           elevation: 0,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: GoogleFonts.plusJakartaSans(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          textStyle: textTheme.titleMedium?.copyWith(color: Colors.black),
         ),
       ),
-      // Outlined Button
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primaryDark,
           minimumSize: const Size(double.infinity, 52),
           side: const BorderSide(color: primaryDark, width: 1.5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: GoogleFonts.plusJakartaSans(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          textStyle: textTheme.titleMedium,
         ),
       ),
-      // Bottom nav
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: backgroundDark,
         selectedItemColor: primaryDark,
         unselectedItemColor: textSecondaryDark,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
+        selectedLabelStyle: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
+        unselectedLabelStyle: textTheme.labelSmall,
       ),
-      // Chip
       chipTheme: ChipThemeData(
         backgroundColor: surface2Dark,
-        labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: textPrimaryDark),
+        labelStyle: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500, color: textPrimaryDark),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: const BorderSide(color: dividerDark, width: 0.5),
         ),
       ),
-      // Divider
-      dividerTheme: const DividerThemeData(
-        color: dividerDark,
-        thickness: 0.5,
-      ),
+      dividerTheme: const DividerThemeData(color: dividerDark, thickness: 0.5),
     );
   }
 
-  // === Shared TextTheme builder ===
-  static TextTheme _buildTextTheme(Color primary, Color secondary) {
+  // === English TextTheme ===
+  static TextTheme _buildEnglishTextTheme(Color primary, Color secondary) {
     return TextTheme(
-      displayLarge: GoogleFonts.plusJakartaSans(
-        fontSize: 36, fontWeight: FontWeight.w800, color: primary, letterSpacing: -0.5,
-      ),
-      displayMedium: GoogleFonts.plusJakartaSans(
-        fontSize: 28, fontWeight: FontWeight.bold, color: primary,
-      ),
-      titleLarge: GoogleFonts.plusJakartaSans(
-        fontSize: 20, fontWeight: FontWeight.bold, color: primary,
-      ),
-      titleMedium: GoogleFonts.plusJakartaSans(
-        fontSize: 16, fontWeight: FontWeight.w600, color: primary,
-      ),
-      titleSmall: GoogleFonts.plusJakartaSans(
-        fontSize: 14, fontWeight: FontWeight.w600, color: primary,
-      ),
-      bodyLarge: GoogleFonts.inter(
-        fontSize: 16, color: primary, height: 1.5,
-      ),
-      bodyMedium: GoogleFonts.inter(
-        fontSize: 14, color: secondary, height: 1.5,
-      ),
-      bodySmall: GoogleFonts.inter(
-        fontSize: 12, color: secondary, height: 1.4,
-      ),
-      labelLarge: GoogleFonts.plusJakartaSans(
-        fontSize: 15, fontWeight: FontWeight.w600, color: primary,
-      ),
+      displayLarge: const TextStyle(fontFamily: 'PlusJakartaSans', fontSize: 36, fontWeight: FontWeight.w800).copyWith(color: primary, letterSpacing: -0.5),
+      displayMedium: const TextStyle(fontFamily: 'PlusJakartaSans', fontSize: 28, fontWeight: FontWeight.bold).copyWith(color: primary),
+      titleLarge: const TextStyle(fontFamily: 'PlusJakartaSans', fontSize: 20, fontWeight: FontWeight.bold).copyWith(color: primary),
+      titleMedium: const TextStyle(fontFamily: 'PlusJakartaSans', fontSize: 16, fontWeight: FontWeight.w600).copyWith(color: primary),
+      titleSmall: const TextStyle(fontFamily: 'PlusJakartaSans', fontSize: 14, fontWeight: FontWeight.w600).copyWith(color: primary),
+      bodyLarge: const TextStyle(fontFamily: 'Inter', fontSize: 16).copyWith(color: primary, height: 1.5),
+      bodyMedium: const TextStyle(fontFamily: 'Inter', fontSize: 14).copyWith(color: secondary, height: 1.5),
+      bodySmall: const TextStyle(fontFamily: 'Inter', fontSize: 12).copyWith(color: secondary, height: 1.4),
+      labelLarge: const TextStyle(fontFamily: 'PlusJakartaSans', fontSize: 15, fontWeight: FontWeight.w600).copyWith(color: primary),
+      labelSmall: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w500).copyWith(color: primary),
+    );
+  }
+
+  // === Urdu TextTheme ===
+  // Increased sizes for Nastaliq readability
+  static TextTheme _buildUrduTextTheme(Color primary, Color secondary) {
+    return TextTheme(
+      displayLarge: const TextStyle(fontFamily: 'JameelNooriNastaleeq', fontSize: 42).copyWith(color: primary),
+      displayMedium: const TextStyle(fontFamily: 'JameelNooriNastaleeq', fontSize: 34).copyWith(color: primary),
+      titleLarge: const TextStyle(fontFamily: 'JameelNooriNastaleeq', fontSize: 24).copyWith(color: primary),
+      titleMedium: const TextStyle(fontFamily: 'JameelNooriNastaleeq', fontSize: 20).copyWith(color: primary),
+      titleSmall: const TextStyle(fontFamily: 'JameelNooriNastaleeq', fontSize: 18).copyWith(color: primary),
+      bodyLarge: const TextStyle(fontFamily: 'JameelNooriNastaleeq', fontSize: 20).copyWith(color: primary, height: 1.8),
+      bodyMedium: const TextStyle(fontFamily: 'NotoNastaliqUrdu', fontSize: 16).copyWith(color: secondary, height: 1.8),
+      bodySmall: const TextStyle(fontFamily: 'NotoNastaliqUrdu', fontSize: 14).copyWith(color: secondary, height: 1.6),
+      labelLarge: const TextStyle(fontFamily: 'JameelNooriNastaleeq', fontSize: 18).copyWith(color: primary),
+      labelSmall: const TextStyle(fontFamily: 'NotoNastaliqUrdu', fontSize: 12).copyWith(color: primary),
     );
   }
 
@@ -315,21 +253,6 @@ class AppTheme {
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,
-    );
-  }
-
-  /// Returns Noto Nastaliq Urdu style for Urdu text
-  static TextStyle urduStyle({
-    double fontSize = 16,
-    FontWeight fontWeight = FontWeight.normal,
-    Color? color,
-    double height = 1.8,
-  }) {
-    return GoogleFonts.notoNastaliqUrdu(
-      fontSize: fontSize,
-      fontWeight: fontWeight,
-      color: color,
-      height: height,
     );
   }
 

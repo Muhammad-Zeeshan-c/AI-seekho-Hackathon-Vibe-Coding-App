@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_notifier.dart';
 import '../../data/mock/mock_providers.dart';
@@ -35,6 +36,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeMode = ref.watch(themeNotifierProvider);
     final topProviders = MockProviderDatabase.providers.where((p) => p.rating >= 4.7).take(6).toList();
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
@@ -124,11 +126,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Services', style: Theme.of(context).textTheme.titleLarge),
+                      Text(l10n.services, style: Theme.of(context).textTheme.titleLarge),
                       GestureDetector(
                         onTap: () => context.push('/results?category=All'),
                         child: Text(
-                          'See all',
+                          l10n.seeAll,
                           style: TextStyle(
                             color: isDark ? AppTheme.primaryDark : AppTheme.primary,
                             fontWeight: FontWeight.w600,
@@ -151,11 +153,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Top Rated Nearby', style: Theme.of(context).textTheme.titleLarge),
+                      Text(l10n.topRatedNearby, style: Theme.of(context).textTheme.titleLarge),
                       GestureDetector(
                         onTap: () => context.push('/results?category=All'),
                         child: Text(
-                          'See all',
+                          l10n.seeAll,
                           style: TextStyle(
                             color: isDark ? AppTheme.primaryDark : AppTheme.primary,
                             fontWeight: FontWeight.w600,
@@ -274,7 +276,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'What service\ndo you need?',
+                  AppLocalizations.of(context)!.whatDoYouNeed,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
@@ -400,9 +402,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Row(
                       children: [
-                        const Text(
-                          'AI Assistant',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                        Text(
+                          AppLocalizations.of(context)!.aiAssistant,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
                         ),
                         const SizedBox(width: 8),
                         Container(
@@ -420,7 +422,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Bolo kya chahiye? Book in 60 seconds 🎙️',
+                      AppLocalizations.of(context)!.aiPromptHint,
                       style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13),
                     ),
                   ],
@@ -646,11 +648,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home_filled), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined), activeIcon: Icon(Icons.receipt_long_rounded), label: 'Bookings'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline_rounded), activeIcon: Icon(Icons.chat_bubble_rounded), label: 'Chat'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), activeIcon: Icon(Icons.person_rounded), label: 'Profile'),
+        items: [
+          BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home_filled), label: AppLocalizations.of(context)!.home),
+          BottomNavigationBarItem(icon: const Icon(Icons.receipt_long_outlined), activeIcon: const Icon(Icons.receipt_long_rounded), label: AppLocalizations.of(context)!.bookings),
+          BottomNavigationBarItem(icon: const Icon(Icons.chat_bubble_outline_rounded), activeIcon: const Icon(Icons.chat_bubble_rounded), label: AppLocalizations.of(context)!.chat),
+          BottomNavigationBarItem(icon: const Icon(Icons.person_outline_rounded), activeIcon: const Icon(Icons.person_rounded), label: AppLocalizations.of(context)!.profile),
         ],
       ),
     );

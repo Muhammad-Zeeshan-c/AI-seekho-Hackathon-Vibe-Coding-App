@@ -15,7 +15,13 @@ class AiOrchestrator {
     required String userInput,
     required double userLat,
     required double userLng,
+    required String appLanguage, // 'en' or 'ur'
   }) async {
+    // SYSTEM PROMPT FOR GEMINI (To be used when integrated):
+    // "The user may type in English, Roman Urdu, Urdu script, or a mix. 
+    // Understand all equally. Always extract intent correctly regardless of input language.
+    // Respond in: [English if appLanguage=en, Urdu script if appLanguage=ur].
+    // AI responses in the chat must match the selected UI language — English UI → AI replies in English, Urdu UI → AI replies in Urdu script."
     final startTime = DateTime.now();
     final List<AgentTraceModel> steps = [];
 

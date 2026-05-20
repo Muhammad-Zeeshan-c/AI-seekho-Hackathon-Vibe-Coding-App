@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 
 /// Premium login screen for both clients and workers.
@@ -52,6 +53,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: SafeArea(
@@ -87,14 +89,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
                 // Title
                 Text(
-                  'Sign In',
+                  l10n.welcomeBack,
                   style: Theme.of(context).textTheme.displayMedium,
                 ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0),
 
                 const SizedBox(height: 6),
 
                 Text(
-                  'Enter your phone number to continue',
+                  l10n.loginToContinue,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
 
@@ -118,9 +120,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     unselectedLabelColor: AppTheme.textSecondary(context),
                     labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                     dividerColor: Colors.transparent,
-                    tabs: const [
-                      Tab(text: 'Client'),
-                      Tab(text: 'Worker'),
+                    tabs: [
+                      Tab(text: l10n.client),
+                      Tab(text: l10n.worker),
                     ],
                   ),
                 ).animate(delay: 150.ms).fadeIn(duration: 400.ms),
@@ -129,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
                 // Phone Number Field
                 Text(
-                  'Phone Number',
+                  l10n.phoneNumber,
                   style: Theme.of(context).textTheme.titleSmall,
                 ).animate(delay: 200.ms).fadeIn(duration: 400.ms),
 
@@ -182,13 +184,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   },
                 ).animate(delay: 250.ms).fadeIn(duration: 400.ms),
 
-                const SizedBox(height: 10),
-
-                Text(
-                  'We\'ll use this to identify your account. OTP verification will be available soon.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5),
-                ).animate(delay: 300.ms).fadeIn(duration: 400.ms),
-
                 const SizedBox(height: 36),
 
                 // Continue Button
@@ -214,51 +209,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         )
                       : ElevatedButton(
                           onPressed: _continue,
-                          child: const Text('Continue'),
+                          child: Text(l10n.continueButton),
                         ),
                 ).animate(delay: 350.ms).fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0),
-
-                const SizedBox(height: 24),
-
-                // Divider
-                Row(
-                  children: [
-                    Expanded(child: Divider(color: AppTheme.divider(context))),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('or', style: Theme.of(context).textTheme.bodySmall),
-                    ),
-                    Expanded(child: Divider(color: AppTheme.divider(context))),
-                  ],
-                ).animate(delay: 400.ms).fadeIn(duration: 300.ms),
-
-                const SizedBox(height: 24),
-
-                // Register link
-                OutlinedButton(
-                  onPressed: () {
-                    final role = _tabController.index == 0 ? 'user' : 'provider';
-                    context.push('/register/$role');
-                  },
-                  child: Text(
-                    'Create New Account',
-                    style: TextStyle(
-                      color: isDark ? AppTheme.primaryDark : AppTheme.primary,
-                    ),
-                  ),
-                ).animate(delay: 450.ms).fadeIn(duration: 400.ms),
-
-                const SizedBox(height: 32),
-
-                // Terms
-                Center(
-                  child: Text(
-                    'By continuing, you agree to KaamKaar\'s\nTerms of Service & Privacy Policy',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.6),
-                  ),
-                ).animate(delay: 500.ms).fadeIn(duration: 300.ms),
-
                 const SizedBox(height: 24),
               ],
             ),

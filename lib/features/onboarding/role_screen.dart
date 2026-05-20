@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 
 /// Role selection — bold split layout: Client vs Service Worker
@@ -9,8 +10,8 @@ class RoleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: SafeArea(
@@ -23,24 +24,17 @@ class RoleScreen extends StatelessWidget {
 
               // Header
               Text(
-                'Who are you?',
+                l10n.areYouClientOrWorker,
                 style: Theme.of(context).textTheme.displayMedium,
               ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0),
-
-              const SizedBox(height: 8),
-              Text(
-                'Select your role to get started',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
 
               const SizedBox(height: 36),
 
               // Client card
               _RoleCard(
                 emoji: '🏠',
-                title: 'I Need a Service',
-                titleUrdu: 'مجھے خدمات چاہیے',
-                description: 'Book skilled workers for your home needs — electricians, plumbers, AC technicians & more',
+                title: l10n.client,
+                description: l10n.clientDesc,
                 accentColor: AppTheme.primary,
                 gradientColors: isDark
                     ? [const Color(0xFF0D1F3C), const Color(0xFF0A1628)]
@@ -55,9 +49,8 @@ class RoleScreen extends StatelessWidget {
               // Worker card
               _RoleCard(
                 emoji: '🔧',
-                title: 'I Provide Services',
-                titleUrdu: 'میں خدمات دیتا ہوں',
-                description: 'Join thousands of skilled workers earning good income through KaamKaar',
+                title: l10n.worker,
+                description: l10n.workerDesc,
                 accentColor: AppTheme.secondary,
                 gradientColors: isDark
                     ? [const Color(0xFF2D1506), const Color(0xFF1E0D04)]
@@ -68,31 +61,6 @@ class RoleScreen extends StatelessWidget {
               ).animate(delay: 350.ms).fadeIn(duration: 450.ms).slideY(begin: 0.15, end: 0),
 
               const Spacer(),
-
-              // Stats strip
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                decoration: BoxDecoration(
-                  color: AppTheme.surface(context),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppTheme.divider(context),
-                    width: 0.5,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _StatItem(value: '100+', label: 'Workers', context: context),
-                    _Divider(isDark: isDark),
-                    _StatItem(value: '4.8★', label: 'Rating', context: context),
-                    _Divider(isDark: isDark),
-                    _StatItem(value: 'ISB', label: '& 2 Cities', context: context),
-                  ],
-                ),
-              ).animate(delay: 500.ms).fadeIn(duration: 400.ms),
-
-              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -102,7 +70,7 @@ class RoleScreen extends StatelessWidget {
 }
 
 class _RoleCard extends StatefulWidget {
-  final String emoji, title, titleUrdu, description, badgeLabel;
+  final String emoji, title, description, badgeLabel;
   final Color accentColor;
   final List<Color> gradientColors;
   final VoidCallback onTap;
@@ -111,7 +79,6 @@ class _RoleCard extends StatefulWidget {
   const _RoleCard({
     required this.emoji,
     required this.title,
-    required this.titleUrdu,
     required this.description,
     required this.accentColor,
     required this.gradientColors,
@@ -218,44 +185,6 @@ class _RoleCardState extends State<_RoleCard> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final String value, label;
-  final BuildContext context;
-
-  const _StatItem({required this.value, required this.label, required this.context});
-
-  @override
-  Widget build(BuildContext _) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppTheme.primary,
-                fontWeight: FontWeight.w800,
-              ),
-        ),
-        const SizedBox(height: 2),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ],
-    );
-  }
-}
-
-class _Divider extends StatelessWidget {
-  final bool isDark;
-  const _Divider({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 28,
-      width: 1,
-      color: isDark ? AppTheme.dividerDark : const Color(0xFFEEEEEE),
     );
   }
 }

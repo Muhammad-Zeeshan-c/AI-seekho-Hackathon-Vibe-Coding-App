@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Ignore error if not generated yet
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_notifier.dart';
+import 'core/localization/language_notifier.dart';
 
 // Screen imports
 import 'features/onboarding/splash_screen.dart';
@@ -22,14 +25,16 @@ import 'features/auxiliary/report_screen.dart';
 import 'features/auxiliary/history_screen.dart';
 import 'features/auxiliary/agent_trace_screen.dart';
 
-/// Root widget — wires theme and routing
+/// Root widget — wires theme, localization, and routing
 class KaamKaarApp extends ConsumerWidget {
   const KaamKaarApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch current theme mode from Riverpod
+    // Watch current theme and language from Riverpod
     final themeMode = ref.watch(themeNotifierProvider);
+    final locale = ref.watch(languageNotifierProvider);
+    final isUrdu = locale.languageCode == 'ur';
 
     final GoRouter router = GoRouter(
       initialLocation: '/',
@@ -84,7 +89,6 @@ class KaamKaarApp extends ConsumerWidget {
         GoRoute(
           path: '/report',
           builder: (ctx, state) => ReportScreen(
-            bookingId: state.uri.queryParameters['bookingId'] ?? '',
             providerId: state.uri.queryParameters['providerId'] ?? '',
           ),
         ),
@@ -100,8 +104,25 @@ class KaamKaarApp extends ConsumerWidget {
       title: 'KaamKaar',
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme(isUrdu),
+      darkTheme: AppTheme.darkTheme(isUrdu),
+      locale: locale,
+      supportedLocales: const [
+        Locale('en'),
+        Locale('ur'),
+      ],
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      builder: (context, child) {
+        return Directionality(
+          textDirection: isUrdu ? TextDirection.rtl : TextDirection.ltr,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       routerConfig: router,
     );
   }
