@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:confetti/confetti.dart';
 import '../../core/theme/app_theme.dart';
+import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 
 /// Rating & review screen with animated stars, tag chips, confetti on submit
 class RatingScreen extends StatefulWidget {
@@ -39,11 +40,11 @@ class _RatingScreenState extends State<RatingScreen> {
     super.dispose();
   }
 
-  void _submit() async {
+  void _submit(AppLocalizations l10n) async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please give a star rating first'),
+          content: Text(l10n.urdu == 'اردو' ? 'براہ کرم پہلے اسٹار ریٹنگ دیں' : 'Please give a star rating first'),
           backgroundColor: AppTheme.errorRed,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -58,12 +59,13 @@ class _RatingScreenState extends State<RatingScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
       body: Stack(
         children: [
-          _submitted ? _buildSuccessState(context, isDark) : _buildRatingForm(context, isDark),
+          _submitted ? _buildSuccessState(context, isDark, l10n) : _buildRatingForm(context, isDark, l10n),
           Align(
             alignment: Alignment.topCenter,
             child: ConfettiWidget(
@@ -78,7 +80,7 @@ class _RatingScreenState extends State<RatingScreen> {
     );
   }
 
-  Widget _buildRatingForm(BuildContext context, bool isDark) {
+  Widget _buildRatingForm(BuildContext context, bool isDark, AppLocalizations l10n) {
     return SafeArea(
       child: Column(
         children: [
@@ -96,7 +98,7 @@ class _RatingScreenState extends State<RatingScreen> {
                   ),
                 ),
                 const SizedBox(width: 14),
-                Text('Rate Your Experience', style: Theme.of(context).textTheme.titleLarge),
+                Text(l10n.urdu == 'اردو' ? 'اپنا تجربہ ریٹ کریں' : 'Rate Your Experience', style: Theme.of(context).textTheme.titleLarge),
               ],
             ),
           ),
@@ -123,7 +125,7 @@ class _RatingScreenState extends State<RatingScreen> {
                   const SizedBox(height: 32),
 
                   // Star rating
-                  Text('How was the service?', style: Theme.of(context).textTheme.titleMedium),
+                  Text(l10n.urdu == 'اردو' ? 'سروس کیسی تھی؟' : 'How was the service?', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -145,14 +147,24 @@ class _RatingScreenState extends State<RatingScreen> {
 
                   const SizedBox(height: 8),
                   Text(
-                    _rating == 0 ? 'Tap to rate' : _rating == 5 ? 'Excellent! 🎉' : _rating == 4 ? 'Great 👍' : _rating == 3 ? 'Good 😊' : _rating == 2 ? 'Fair 😐' : 'Poor 😞',
+                    _rating == 0 
+                        ? (l10n.urdu == 'اردو' ? 'ریٹ کرنے کے لیے ٹیپ کریں' : 'Tap to rate')
+                        : _rating == 5 
+                            ? (l10n.urdu == 'اردو' ? 'بہت بہترین! 🎉' : 'Excellent! 🎉') 
+                            : _rating == 4 
+                                ? (l10n.urdu == 'اردو' ? 'بہت اچھا 👍' : 'Great 👍') 
+                                : _rating == 3 
+                                    ? (l10n.urdu == 'اردو' ? 'اچھا 😊' : 'Good 😊') 
+                                    : _rating == 2 
+                                        ? (l10n.urdu == 'اردو' ? 'مناسب 😐' : 'Fair 😐') 
+                                        : (l10n.urdu == 'اردو' ? 'خراب 😞' : 'Poor 😞'),
                     style: TextStyle(color: _rating > 0 ? Colors.amber : AppTheme.textSecondary(context), fontWeight: FontWeight.w700, fontSize: 15),
                   ).animate(delay: 300.ms).fadeIn(duration: 300.ms),
 
                   const SizedBox(height: 28),
 
                   // Tag chips
-                  Align(alignment: Alignment.centerLeft, child: Text('What did you like?', style: Theme.of(context).textTheme.titleSmall)),
+                  Align(alignment: Alignment.centerLeft, child: Text(l10n.urdu == 'اردو' ? 'آپ کو کیا پسند آیا؟' : 'What did you like?', style: Theme.of(context).textTheme.titleSmall)),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
@@ -169,7 +181,7 @@ class _RatingScreenState extends State<RatingScreen> {
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(color: isSelected ? AppTheme.accent : AppTheme.divider(context), width: isSelected ? 1.5 : 0.5),
                           ),
-                          child: Text(tag, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isSelected ? AppTheme.accent : AppTheme.textPrimary(context))),
+                          child: Text(_getLocalizedTag(tag, l10n), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isSelected ? AppTheme.accent : AppTheme.textPrimary(context))),
                         ),
                       );
                     }).toList(),
@@ -178,13 +190,13 @@ class _RatingScreenState extends State<RatingScreen> {
                   const SizedBox(height: 24),
 
                   // Review text
-                  Align(alignment: Alignment.centerLeft, child: Text('Write a review (optional)', style: Theme.of(context).textTheme.titleSmall)),
+                  Align(alignment: Alignment.centerLeft, child: Text(l10n.urdu == 'اردو' ? 'رائے لکھیں (اختیاری)' : 'Write a review (optional)', style: Theme.of(context).textTheme.titleSmall)),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _reviewController,
                     maxLines: 3,
                     maxLength: 300,
-                    decoration: const InputDecoration(hintText: 'Share your experience...'),
+                    decoration: InputDecoration(hintText: l10n.urdu == 'اردو' ? 'اپنا تجربہ شیئر کریں...' : 'Share your experience...'),
                   ).animate(delay: 400.ms).fadeIn(duration: 400.ms),
 
                   const SizedBox(height: 20),
@@ -199,11 +211,11 @@ class _RatingScreenState extends State<RatingScreen> {
                     ),
                     child: Row(
                       children: [
-                        Text('Would you hire again?', style: Theme.of(context).textTheme.titleSmall),
+                        Text(l10n.urdu == 'اردو' ? 'کیا آپ دوبارہ خدمات حاصل کریں گے؟' : 'Would you hire again?', style: Theme.of(context).textTheme.titleSmall),
                         const Spacer(),
-                        _HireToggle(value: true, selected: _wouldHireAgain, label: '👍 Yes', onTap: () => setState(() => _wouldHireAgain = true), isDark: isDark, context: context),
+                        _HireToggle(value: true, selected: _wouldHireAgain, label: l10n.urdu == 'اردو' ? '👍 جی ہاں' : '👍 Yes', onTap: () => setState(() => _wouldHireAgain = true), isDark: isDark, context: context),
                         const SizedBox(width: 8),
-                        _HireToggle(value: false, selected: !_wouldHireAgain, label: '👎 No', onTap: () => setState(() => _wouldHireAgain = false), isDark: isDark, context: context),
+                        _HireToggle(value: false, selected: !_wouldHireAgain, label: l10n.urdu == 'اردو' ? '👎 جی نہیں' : '👎 No', onTap: () => setState(() => _wouldHireAgain = false), isDark: isDark, context: context),
                       ],
                     ),
                   ).animate(delay: 450.ms).fadeIn(duration: 400.ms),
@@ -217,8 +229,8 @@ class _RatingScreenState extends State<RatingScreen> {
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             decoration: BoxDecoration(color: AppTheme.surface(context), border: Border(top: BorderSide(color: AppTheme.divider(context), width: 0.5))),
             child: ElevatedButton(
-              onPressed: _submit,
-              child: const Text('Submit Review'),
+              onPressed: () => _submit(l10n),
+              child: Text(l10n.urdu == 'اردو' ? 'رائے جمع کریں' : 'Submit Review'),
             ),
           ),
         ],
@@ -226,7 +238,7 @@ class _RatingScreenState extends State<RatingScreen> {
     );
   }
 
-  Widget _buildSuccessState(BuildContext context, bool isDark) {
+  Widget _buildSuccessState(BuildContext context, bool isDark, AppLocalizations l10n) {
     return SafeArea(
       child: Center(
         child: Padding(
@@ -241,17 +253,23 @@ class _RatingScreenState extends State<RatingScreen> {
                 child: const Center(child: Icon(Icons.check_rounded, color: Colors.white, size: 48)),
               ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack),
               const SizedBox(height: 24),
-              Text('Shukria! 🎉', style: Theme.of(context).textTheme.displayMedium).animate(delay: 200.ms).fadeIn(duration: 400.ms),
+              Text(l10n.urdu == 'اردو' ? 'شکریہ! 🎉' : 'Thank You! 🎉', style: Theme.of(context).textTheme.displayMedium).animate(delay: 200.ms).fadeIn(duration: 400.ms),
               const SizedBox(height: 8),
-              Text('Aapka review submit ho gaya.\nHam aapki feedback ke liye shukarguazar hain!',
+              Text(
+                  l10n.urdu == 'اردو' 
+                      ? 'آپ کا تبصرہ جمع کر دیا گیا ہے۔\nہم آپ کے تاثرات کے شکر گزار ہیں!' 
+                      : 'Your review has been submitted.\nWe appreciate your feedback!',
                   textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge).animate(delay: 300.ms).fadeIn(duration: 400.ms),
               const SizedBox(height: 12),
-              Text('AI will remember your preferences\nfor future bookings 🤖',
+              Text(
+                  l10n.urdu == 'اردو' 
+                      ? 'مصنوعی ذہانت مستقبل کی بکنگ کے لیے\nآپ کی ترجیحات کو یاد رکھے گی 🤖'
+                      : 'AI will remember your preferences\nfor future bookings 🤖',
                   textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppTheme.aiPurple, fontWeight: FontWeight.w600)).animate(delay: 400.ms).fadeIn(duration: 400.ms),
               const SizedBox(height: 40),
               ElevatedButton(
                 onPressed: () => context.go('/dashboard/user'),
-                child: const Text('Back to Home'),
+                child: Text(l10n.home),
               ).animate(delay: 500.ms).fadeIn(duration: 400.ms),
             ],
           ),
@@ -260,7 +278,22 @@ class _RatingScreenState extends State<RatingScreen> {
     );
   }
 }
-
+  String _getLocalizedTag(String tag, AppLocalizations l10n) {
+    if (l10n.urdu == 'اردو') {
+      switch (tag) {
+        case 'Professional': return 'پیشہ ورانہ';
+        case 'On Time': return 'وقت پر';
+        case 'Good Work': return 'اچھا کام';
+        case 'Affordable': return 'مناسب قیمت';
+        case 'Clean & Neat': return 'صاف ستھرا';
+        case 'Friendly': return 'خوش اخلاق';
+        case 'Skilled': return 'ماہر';
+        case 'Would Recommend': return 'سفارش کریں گے';
+        default: return tag;
+      }
+    }
+    return tag;
+  }
 class _HireToggle extends StatelessWidget {
   final bool value, selected, isDark;
   final String label;

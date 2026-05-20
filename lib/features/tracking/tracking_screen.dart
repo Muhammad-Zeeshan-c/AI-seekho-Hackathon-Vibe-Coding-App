@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -8,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/mock/mock_providers.dart';
 import '../../data/models/provider_model.dart';
 import '../../data/services/tracking_simulator.dart';
+import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 
 /// Live worker tracking screen — Uber-style with animated marker + ETA countdown
 class TrackingScreen extends StatefulWidget {
@@ -69,7 +69,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
           _workerArrived = true;
           _statusIndex = 3;
         });
-        _showArrivalBanner();
+        if (mounted) {
+          _showArrivalBanner(AppLocalizations.of(context)!);
+        }
       }
     });
   }
@@ -80,7 +82,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     super.dispose();
   }
 
-  void _showArrivalBanner() {
+  void _showArrivalBanner(AppLocalizations l10n) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -88,7 +90,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
             const Text('🎉', style: TextStyle(fontSize: 20)),
             const SizedBox(width: 10),
             Text(
-              '${_provider.name.split(' ').first} has arrived!',
+              l10n.urdu == 'اردو' ? '${_provider.name.split(' ').first} پہنچ گئے ہیں!' : '${_provider.name.split(' ').first} has arrived!',
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
             ),
           ],
@@ -104,6 +106,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Stack(
@@ -198,7 +201,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            _workerArrived ? '${_provider.name.split(" ").first} has arrived! 🎉' : '${_provider.name.split(" ").first} is on the way',
+                            _workerArrived 
+                                ? (l10n.urdu == 'اردو' ? '${_provider.name.split(" ").first} پہنچ گئے ہیں! 🎉' : '${_provider.name.split(" ").first} has arrived! 🎉')
+                                : (l10n.urdu == 'اردو' ? '${_provider.name.split(" ").first} راستے میں ہیں' : '${_provider.name.split(" ").first} is on the way'),
                             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.textPrimary(context)),
                           ),
                         ],
@@ -228,7 +233,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       '${_etaMinutes.ceil()}',
                       style: TextStyle(fontWeight: FontWeight.w900, fontSize: 26, color: AppTheme.accent),
                     ),
-                    Text('min', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary(context))),
+                    Text(l10n.mins, style: TextStyle(fontSize: 11, color: AppTheme.textSecondary(context))),
                   ],
                 ),
               ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2000.ms, color: AppTheme.accent.withOpacity(0.2)),
@@ -298,7 +303,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Status Timeline', style: Theme.of(context).textTheme.titleSmall),
+                          Text(l10n.urdu == 'اردو' ? 'بکنگ کی صورتحال' : 'Status Timeline', style: Theme.of(context).textTheme.titleSmall),
                           const SizedBox(height: 14),
                           ...List.generate(_statuses.length, (i) {
                             final isDone = i <= _statusIndex;
@@ -327,7 +332,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
-                                    _statuses[i],
+                                    _getLocalizedStatus(i, l10n),
                                     style: TextStyle(
                                       fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
                                       fontSize: 14,
@@ -354,12 +359,12 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: OutlinedButton(
-                        onPressed: () => _showCancelDialog(context),
+                        onPressed: () => _showCancelDialog(context, l10n),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.errorRed,
                           side: BorderSide(color: AppTheme.errorRed.withOpacity(0.5)),
                         ),
-                        child: const Text('Cancel Booking'),
+                        child: Text(l10n.cancelBooking),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -387,23 +392,39 @@ class _TrackingScreenState extends State<TrackingScreen> {
     return '';
   }
 
-  void _showCancelDialog(BuildContext context) {
+  void _showCancelDialog(BuildContext context, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Cancel Booking?'),
-        content: const Text('Are you sure you want to cancel? The worker is already on the way.'),
+        title: Text(l10n.cancelBooking + '?'),
+        content: Text(l10n.urdu == 'اردو' ? 'کیا آپ واقعی منسوخ کرنا چاہتے ہیں؟ ورکر پہلے ہی راستے میں ہے۔' : 'Are you sure you want to cancel? The worker is already on the way.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Keep Booking')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.urdu == 'اردو' ? 'بکنگ برقرار رکھیں' : 'Keep Booking')),
           TextButton(
             onPressed: () { Navigator.pop(ctx); context.go('/dashboard/user'); },
-            child: Text('Cancel', style: TextStyle(color: AppTheme.errorRed)),
+            child: Text(l10n.urdu == 'اردو' ? 'منسوخ کریں' : 'Cancel', style: TextStyle(color: AppTheme.errorRed)),
           ),
         ],
       ),
     );
+  }
+
+  String _getLocalizedStatus(int index, AppLocalizations l10n) {
+    if (l10n.urdu == 'اردو') {
+      final statusesUr = [
+        'بکنگ کی تصدیق ہو گئی',
+        'ورکر کو مطلع کر دیا گیا',
+        'ورکر راستے میں ہے',
+        'ورکر پہنچ گیا ہے',
+        'کام شروع ہو گیا',
+        'کام مکمل ہو گیا',
+      ];
+      return statusesUr[index];
+    } else {
+      return _statuses[index];
+    }
   }
 }
 

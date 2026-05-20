@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
+import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 
 /// Screen to report a provider or issue
 class ReportScreen extends StatefulWidget {
@@ -32,11 +33,11 @@ class _ReportScreenState extends State<ReportScreen> {
     super.dispose();
   }
 
-  void _submit() async {
+  void _submit(AppLocalizations l10n) async {
     if (_selectedReason == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please select a reason'),
+          content: Text(l10n.urdu == 'اردو' ? 'براہ کرم رپورٹ کی وجہ منتخب کریں' : 'Please select a reason'),
           backgroundColor: AppTheme.errorRed,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -50,6 +51,7 @@ class _ReportScreenState extends State<ReportScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     if (_submitted) {
       return Scaffold(
@@ -66,17 +68,19 @@ class _ReportScreenState extends State<ReportScreen> {
                   child: const Center(child: Icon(Icons.shield_rounded, color: AppTheme.accent, size: 40)),
                 ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
                 const SizedBox(height: 24),
-                Text('Report Submitted', style: Theme.of(context).textTheme.titleLarge),
+                Text(l10n.urdu == 'اردو' ? 'رپورٹ جمع کر دی گئی' : 'Report Submitted', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 12),
                 Text(
-                  'Our trust and safety team will review your report within 24 hours. We take these matters seriously.',
+                  l10n.urdu == 'اردو' 
+                      ? 'ہماری ٹیم ۲۴ گھنٹوں میں اس کا جائزہ لے گی۔ ہم ان معاملات کو سنجیدگی سے لیتے ہیں۔' 
+                      : 'Our trust and safety team will review your report within 24 hours. We take these matters seriously.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () => context.pop(),
-                  child: const Text('Back to Home'),
+                  child: Text(l10n.home),
                 ),
               ],
             ),
@@ -100,7 +104,7 @@ class _ReportScreenState extends State<ReportScreen> {
             child: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: AppTheme.textPrimary(context)),
           ),
         ),
-        title: Text('Report Issue', style: Theme.of(context).textTheme.titleLarge),
+        title: Text(l10n.reportIssue, style: Theme.of(context).textTheme.titleLarge),
       ),
       body: SafeArea(
         child: Column(
@@ -124,7 +128,9 @@ class _ReportScreenState extends State<ReportScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Reporting provider ${widget.providerId}. All reports are confidential.',
+                              l10n.urdu == 'اردو' 
+                                  ? 'ورکر ${widget.providerId} کی رپورٹ درج کی جا رہی ہے۔ تمام رپورٹس خفیہ رکھی جاتی ہیں۔'
+                                  : 'Reporting provider ${widget.providerId}. All reports are confidential.',
                               style: const TextStyle(color: AppTheme.errorRed, fontSize: 13, fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -132,7 +138,7 @@ class _ReportScreenState extends State<ReportScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Text('Why are you reporting?', style: Theme.of(context).textTheme.titleMedium),
+                     Text(l10n.urdu == 'اردو' ? 'آپ رپورٹ کیوں کر رہے ہیں؟' : 'Why are you reporting?', style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 12),
                     ..._reasons.map((reason) {
                       final isSelected = _selectedReason == reason;
@@ -162,20 +168,20 @@ class _ReportScreenState extends State<ReportScreen> {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              Text(reason, style: TextStyle(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, color: AppTheme.textPrimary(context))),
+                               Text(_getLocalizedReason(reason, l10n), style: TextStyle(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, color: AppTheme.textPrimary(context))),
                             ],
                           ),
                         ),
                       );
                     }),
                     const SizedBox(height: 24),
-                    Text('Additional Details', style: Theme.of(context).textTheme.titleSmall),
+                    Text(l10n.urdu == 'اردو' ? 'مزید تفصیلات' : 'Additional Details', style: Theme.of(context).textTheme.titleSmall),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _detailsController,
                       maxLines: 4,
-                      decoration: const InputDecoration(
-                        hintText: 'Please provide more details about the incident...',
+                      decoration: InputDecoration(
+                        hintText: l10n.urdu == 'اردو' ? 'براہ کرم واقعہ کے بارے میں مزید تفصیلات فراہم کریں...' : 'Please provide more details about the incident...',
                         alignLabelWithHint: true,
                       ),
                     ),
@@ -187,9 +193,9 @@ class _ReportScreenState extends State<ReportScreen> {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
               decoration: BoxDecoration(color: AppTheme.surface(context), border: Border(top: BorderSide(color: AppTheme.divider(context), width: 0.5))),
               child: ElevatedButton(
-                onPressed: _submit,
+                onPressed: () => _submit(l10n),
                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorRed),
-                child: const Text('Submit Report', style: TextStyle(color: Colors.white)),
+                child: Text(l10n.urdu == 'اردو' ? 'رپورٹ جمع کریں' : 'Submit Report', style: const TextStyle(color: Colors.white)),
               ),
             ),
           ],
@@ -198,3 +204,17 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 }
+  String _getLocalizedReason(String reason, AppLocalizations l10n) {
+    if (l10n.urdu == 'اردو') {
+      switch (reason) {
+        case 'Unprofessional behavior': return 'غیر پیشہ ورانہ رویہ';
+        case 'Did not show up': return 'حاضر نہیں ہوا';
+        case 'Poor quality of work': return 'ناقص کام';
+        case 'Asked for extra money': return 'اضافی پیسوں کا مطالبہ کیا';
+        case 'Inappropriate language': return 'نامناسب زبان کا استعمال';
+        case 'Other': return 'دیگر';
+        default: return reason;
+      }
+    }
+    return reason;
+  }

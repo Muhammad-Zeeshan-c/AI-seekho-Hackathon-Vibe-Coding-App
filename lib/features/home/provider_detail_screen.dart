@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/mock/mock_providers.dart';
 import '../../data/models/provider_model.dart';
+import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 
 /// Full provider profile — tabbed: About | Reviews | Portfolio
 class ProviderDetailScreen extends StatefulWidget {
@@ -38,6 +39,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final etaMin = (((_provider.lat - 33.68).abs() * 80) + 8).round().clamp(5, 45);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
@@ -158,7 +160,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
               labelColor: isDark ? AppTheme.primaryDark : AppTheme.primary,
               unselectedLabelColor: AppTheme.textSecondary(context),
               labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-              tabs: const [Tab(text: 'About'), Tab(text: 'Reviews'), Tab(text: 'Portfolio')],
+              tabs: [Tab(text: l10n.about), Tab(text: l10n.reviews), Tab(text: l10n.portfolio)],
             ),
           ),
         ],
@@ -200,7 +202,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
                   children: [
                     const Icon(Icons.flash_on_rounded, size: 18),
                     const SizedBox(width: 6),
-                    const Text('Request Now'),
+                    Text(l10n.requestNow),
                   ],
                 ),
               ),
@@ -222,17 +224,17 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
             spacing: 8,
             runSpacing: 8,
             children: [
-              _InfoChip('⏱ ~$etaMin min away', AppTheme.accent, context, isDark),
+              _InfoChip('⏱ ~$etaMin ${l10n.mins}', AppTheme.accent, context, isDark),
               _InfoChip('💼 ${_provider.yearsExperience} yrs exp', AppTheme.primary, context, isDark),
               _InfoChip('✅ ${_provider.completedJobs} jobs done', AppTheme.secondary, context, isDark),
-              if (_provider.verified) _InfoChip('🔒 CNIC Verified', AppTheme.accent, context, isDark),
+              if (_provider.verified) _InfoChip('🔒 ${l10n.cnicVerified}', AppTheme.accent, context, isDark),
             ],
           ).animate().fadeIn(duration: 300.ms),
 
           const SizedBox(height: 20),
 
           // Bio
-          Text('About', style: Theme.of(context).textTheme.titleMedium),
+          Text(l10n.about, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(16),
@@ -247,7 +249,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
           const SizedBox(height: 20),
 
           // Services
-          Text('Services Offered', style: Theme.of(context).textTheme.titleMedium),
+          Text(l10n.servicesOffered, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -268,7 +270,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
           const SizedBox(height: 20),
 
           // Tags
-          Text('Client Feedback Tags', style: Theme.of(context).textTheme.titleMedium),
+          Text(l10n.feedbackTags, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -288,7 +290,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> with Single
           const SizedBox(height: 20),
 
           // Rating breakdown
-          Text('Rating Breakdown', style: Theme.of(context).textTheme.titleMedium),
+          Text(l10n.ratingBreakdown, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(16),

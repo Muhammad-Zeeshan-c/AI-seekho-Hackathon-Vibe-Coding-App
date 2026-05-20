@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_notifier.dart';
+import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 
 /// Premium worker dashboard — Uber Driver-style with online/offline toggle,
 /// incoming request with countdown ring, earnings, and weekly stats.
@@ -81,6 +82,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
@@ -105,7 +107,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text('KaamKaar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.textPrimary(context))),
-                    Text('Worker Portal', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary(context))),
+                    Text(l10n.urdu == 'اردو' ? 'ورکر پورٹل' : 'Worker Portal', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary(context))),
                   ],
                 ),
               ],
@@ -139,28 +141,28 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Online/Offline card
-                  _buildOnlineCard(context, isDark).animate().fadeIn(duration: 400.ms),
+                  _buildOnlineCard(context, isDark, l10n).animate().fadeIn(duration: 400.ms),
 
                   const SizedBox(height: 16),
 
                   // Incoming request (if any)
                   if (_hasIncomingRequest && _isOnline)
-                    _buildIncomingRequest(context, isDark).animate().fadeIn(duration: 300.ms).slideY(begin: -0.1, end: 0),
+                    _buildIncomingRequest(context, isDark, l10n).animate().fadeIn(duration: 300.ms).slideY(begin: -0.1, end: 0),
 
                   if (_hasIncomingRequest && _isOnline) const SizedBox(height: 16),
 
                   // Today's earnings
-                  _buildEarningsCard(context, isDark).animate(delay: 100.ms).fadeIn(duration: 400.ms),
+                  _buildEarningsCard(context, isDark, l10n).animate(delay: 100.ms).fadeIn(duration: 400.ms),
 
                   const SizedBox(height: 16),
 
                   // Weekly chart
-                  _buildWeeklyChart(context, isDark).animate(delay: 200.ms).fadeIn(duration: 400.ms),
+                  _buildWeeklyChart(context, isDark, l10n).animate(delay: 200.ms).fadeIn(duration: 400.ms),
 
                   const SizedBox(height: 16),
 
                   // Quick stats
-                  _buildQuickStats(context, isDark).animate(delay: 300.ms).fadeIn(duration: 400.ms),
+                  _buildQuickStats(context, isDark, l10n).animate(delay: 300.ms).fadeIn(duration: 400.ms),
 
                   const SizedBox(height: 80),
                 ],
@@ -184,10 +186,10 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11),
           unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home_filled), label: 'Dashboard'),
-            BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined), activeIcon: Icon(Icons.receipt_long_rounded), label: 'Jobs'),
-            BottomNavigationBarItem(icon: Icon(Icons.bar_chart_rounded), activeIcon: Icon(Icons.bar_chart_rounded), label: 'Earnings'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), activeIcon: Icon(Icons.person_rounded), label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home_filled), label: l10n.urdu == 'اردو' ? 'ڈیش بورڈ' : 'Dashboard'),
+          BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined), activeIcon: Icon(Icons.receipt_long_rounded), label: l10n.bookings),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart_rounded), activeIcon: Icon(Icons.bar_chart_rounded), label: l10n.earnings),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), activeIcon: Icon(Icons.person_rounded), label: l10n.profile),
           ],
           onTap: (i) { if (i == 1) context.push('/history'); },
           currentIndex: 0,
@@ -196,7 +198,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
     );
   }
 
-  Widget _buildOnlineCard(BuildContext context, bool isDark) {
+  Widget _buildOnlineCard(BuildContext context, bool isDark, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -213,7 +215,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _isOnline ? 'You\'re ONLINE 🟢' : 'You\'re OFFLINE ⚫',
+                  _isOnline ? (l10n.urdu == 'اردو' ? 'آپ آن لائن ہیں 🟢' : 'You\'re ONLINE 🟢') : (l10n.urdu == 'اردو' ? 'آپ آف لائن ہیں ⚫' : 'You\'re OFFLINE ⚫'),
                   style: TextStyle(
                     fontWeight: FontWeight.w800, fontSize: 18,
                     color: _isOnline ? Colors.white : AppTheme.textPrimary(context),
@@ -221,7 +223,9 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _isOnline ? 'Receiving requests in G-13 & nearby areas' : 'Turn on to start receiving job requests',
+                  _isOnline 
+                      ? (l10n.urdu == 'اردو' ? 'جی-۱۳ اور قریبی علاقوں میں درخواستیں وصول کر رہے ہیں' : 'Receiving requests in G-13 & nearby areas')
+                      : (l10n.urdu == 'اردو' ? 'درخواستیں موصول کرنے کے لیے آن کریں' : 'Turn on to start receiving job requests'),
                   style: TextStyle(color: _isOnline ? Colors.white.withOpacity(0.8) : AppTheme.textSecondary(context), fontSize: 13),
                 ),
               ],
@@ -273,7 +277,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
     );
   }
 
-  Widget _buildIncomingRequest(BuildContext context, bool isDark) {
+  Widget _buildIncomingRequest(BuildContext context, bool isDark, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -294,7 +298,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
                   children: [
                     Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle)),
                     const SizedBox(width: 6),
-                    Text('NEW REQUEST', style: TextStyle(color: AppTheme.primary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                    Text(l10n.urdu == 'اردو' ? 'نئی درخواست' : 'NEW REQUEST', style: TextStyle(color: AppTheme.primary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                   ],
                 ),
               ),
@@ -374,7 +378,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
                       color: isDark ? AppTheme.surface2Dark : const Color(0xFFF0F2F5),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Center(child: Text('Decline', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textSecondary(context)))),
+                    child: Center(child: Text(l10n.decline, style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textSecondary(context)))),
                   ),
                 ),
               ),
@@ -390,7 +394,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
-                    child: const Center(child: Text('Accept Request ✓', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
+                    child: Center(child: Text(l10n.urdu == 'اردو' ? 'درخواست قبول کریں ✓' : 'Accept Request ✓', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
                   ),
                 ),
               ),
@@ -401,7 +405,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
     );
   }
 
-  Widget _buildEarningsCard(BuildContext context, bool isDark) {
+  Widget _buildEarningsCard(BuildContext context, bool isDark, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -412,7 +416,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Today\'s Earnings', style: Theme.of(context).textTheme.bodyMedium),
+          Text(l10n.urdu == 'اردو' ? 'آج کی آمدنی' : 'Today\'s Earnings', style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -440,7 +444,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
             children: [
               Icon(Icons.receipt_long_outlined, size: 14, color: AppTheme.textSecondary(context)),
               const SizedBox(width: 6),
-              Text('3 jobs completed today', style: Theme.of(context).textTheme.bodySmall),
+              Text(l10n.urdu == 'اردو' ? 'آج ۳ کام مکمل کیے' : '3 jobs completed today', style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ],
@@ -448,7 +452,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
     );
   }
 
-  Widget _buildWeeklyChart(BuildContext context, bool isDark) {
+  Widget _buildWeeklyChart(BuildContext context, bool isDark, AppLocalizations l10n) {
     final maxVal = _weekData.reduce(math.max);
 
     return Container(
@@ -463,7 +467,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
         children: [
           Row(
             children: [
-              Text('This Week', style: Theme.of(context).textTheme.titleMedium),
+              Text(l10n.urdu == 'اردو' ? 'اس ہفتے' : 'This Week', style: Theme.of(context).textTheme.titleMedium),
               const Spacer(),
               Text(
                 'Rs. ${_weeklyEarned.toStringAsFixed(0)}',
@@ -471,7 +475,7 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
               ),
             ],
           ),
-          Text('Target: Rs. ${_weeklyTarget.toStringAsFixed(0)}', style: Theme.of(context).textTheme.bodySmall),
+          Text(l10n.urdu == 'اردو' ? 'ہدف: روپے ${_weeklyTarget.toStringAsFixed(0)}' : 'Target: Rs. ${_weeklyTarget.toStringAsFixed(0)}', style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 16),
 
           // Bar chart
@@ -511,14 +515,14 @@ class _WorkerDashboardState extends ConsumerState<WorkerDashboard> with SingleTi
     );
   }
 
-  Widget _buildQuickStats(BuildContext context, bool isDark) {
+  Widget _buildQuickStats(BuildContext context, bool isDark, AppLocalizations l10n) {
     return Row(
       children: [
-        Expanded(child: _StatCard('4.8 ⭐', 'Your Rating', Icons.star_rounded, AppTheme.secondary, context, isDark)),
+        Expanded(child: _StatCard('4.8 ⭐', l10n.urdu == 'اردو' ? 'آپ کی ریٹنگ' : 'Your Rating', Icons.star_rounded, AppTheme.secondary, context, isDark)),
         const SizedBox(width: 12),
-        Expanded(child: _StatCard('98%', 'Acceptance', Icons.check_circle_rounded, AppTheme.accent, context, isDark)),
+        Expanded(child: _StatCard('98%', l10n.urdu == 'اردو' ? 'شرح قبولیت' : 'Acceptance', Icons.check_circle_rounded, AppTheme.accent, context, isDark)),
         const SizedBox(width: 12),
-        Expanded(child: _StatCard('140', 'Total Jobs', Icons.work_rounded, AppTheme.primary, context, isDark)),
+        Expanded(child: _StatCard('140', l10n.urdu == 'اردو' ? 'کل کام' : 'Total Jobs', Icons.work_rounded, AppTheme.primary, context, isDark)),
       ],
     );
   }

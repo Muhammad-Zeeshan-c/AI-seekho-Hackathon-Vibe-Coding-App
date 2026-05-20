@@ -5,6 +5,7 @@ import 'package:confetti/confetti.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/mock/mock_providers.dart';
 import '../../data/models/provider_model.dart';
+import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 
 /// Instant booking confirmation — no time slot picker, on-demand like Uber.
 /// Shows provider info → issue description → confirm → confetti success.
@@ -66,15 +67,16 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
       body: Stack(
         children: [
           if (_isConfirmed)
-            _buildSuccessScreen(context, isDark)
+            _buildSuccessScreen(context, isDark, l10n)
           else
-            _buildBookingForm(context, isDark),
+            _buildBookingForm(context, isDark, l10n),
 
           // Confetti overlay
           Align(
@@ -91,7 +93,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
     );
   }
 
-  Widget _buildBookingForm(BuildContext context, bool isDark) {
+  Widget _buildBookingForm(BuildContext context, bool isDark, AppLocalizations l10n) {
     final etaMin = (((_provider.lat - 33.68).abs() * 80) + 8).round().clamp(5, 45);
 
     return SafeArea(
@@ -115,7 +117,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                   ),
                 ),
                 const SizedBox(width: 14),
-                Text('Confirm Request', style: Theme.of(context).textTheme.titleLarge),
+                Text(l10n.confirmBooking, style: Theme.of(context).textTheme.titleLarge),
               ],
             ),
           ),
@@ -161,7 +163,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                                   if (_provider.verified) ...[
                                     Icon(Icons.verified_rounded, size: 13, color: AppTheme.accent),
                                     const SizedBox(width: 3),
-                                    Text('CNIC Verified', style: TextStyle(fontSize: 11, color: AppTheme.accent, fontWeight: FontWeight.w600)),
+                                    Text(l10n.cnicVerified, style: TextStyle(fontSize: 11, color: AppTheme.accent, fontWeight: FontWeight.w600)),
                                   ],
                                 ],
                               ),
@@ -189,7 +191,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                   const SizedBox(height: 20),
 
                   // Location — auto-filled
-                  Text('Your Location', style: Theme.of(context).textTheme.titleSmall),
+                  Text(l10n.yourLocation, style: Theme.of(context).textTheme.titleSmall),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(14),
@@ -226,7 +228,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                   const SizedBox(height: 20),
 
                   // Quick issue tags
-                  Text('What\'s the issue? (optional)', style: Theme.of(context).textTheme.titleSmall),
+                  Text(l10n.whatsTheIssue, style: Theme.of(context).textTheme.titleSmall),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
@@ -270,7 +272,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                     controller: _notesController,
                     maxLines: 3,
                     decoration: InputDecoration(
-                      hintText: 'Any special instructions? (e.g. 2nd floor, ring bell twice)',
+                      hintText: l10n.urdu == 'اردو' ? 'کوئی خاص ہدایات؟ (مثلاً دوسری منزل، گھنٹی دو بار بجائیں)' : 'Any special instructions? (e.g. 2nd floor, ring bell twice)',
                       hintStyle: TextStyle(color: AppTheme.textSecondary(context), fontSize: 14),
                     ),
                   ).animate(delay: 200.ms).fadeIn(duration: 300.ms),
@@ -287,12 +289,12 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                     ),
                     child: Column(
                       children: [
-                        _PriceRow('Service Fee', 'Rs. ${_provider.rateAmount.toStringAsFixed(0)}', context, isDark),
+                        _PriceRow(l10n.serviceFee, 'Rs. ${_provider.rateAmount.toStringAsFixed(0)}', context, isDark),
                         const SizedBox(height: 8),
-                        _PriceRow('Platform Fee', 'Rs. 50', context, isDark),
+                        _PriceRow(l10n.platformFee, 'Rs. 50', context, isDark),
                         const Divider(height: 20),
                         _PriceRow(
-                          'Estimated Total',
+                          l10n.estTotal,
                           'Rs. ${(_provider.rateAmount + 50).toStringAsFixed(0)}',
                           context, isDark,
                           isTotal: true,
@@ -306,7 +308,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                     children: [
                       const Icon(Icons.payments_outlined, size: 16, color: AppTheme.accent),
                       const SizedBox(width: 6),
-                      Text('Cash on Delivery (COD)', style: TextStyle(fontSize: 13, color: AppTheme.accent, fontWeight: FontWeight.w600)),
+                      Text(l10n.paymentCOD, style: TextStyle(fontSize: 13, color: AppTheme.accent, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ],
@@ -336,7 +338,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                         children: [
                           const Icon(Icons.flash_on_rounded, size: 20),
                           const SizedBox(width: 8),
-                          const Text('Confirm Request Now'),
+                          Text(l10n.requestNow),
                         ],
                       ),
                     ),
@@ -347,7 +349,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
     );
   }
 
-  Widget _buildSuccessScreen(BuildContext context, bool isDark) {
+  Widget _buildSuccessScreen(BuildContext context, bool isDark, AppLocalizations l10n) {
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -369,12 +371,12 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
 
             const SizedBox(height: 24),
 
-            Text('Request Sent! 🎉', style: Theme.of(context).textTheme.displayMedium)
+            Text(l10n.requestSent, style: Theme.of(context).textTheme.displayMedium)
                 .animate(delay: 200.ms).fadeIn(duration: 400.ms),
 
             const SizedBox(height: 8),
-            Text(
-              'We\'re finding ${_provider.name} for you.\nYou\'ll be notified when they accept.',
+             Text(
+              l10n.urdu == 'اردو' ? 'ہم آپ کے لیے ${_provider.name} کو تلاش کر رہے ہیں۔\nجب وہ قبول کریں گے تو آپ کو مطلع کر دیا جائے گا۔' : 'We\'re finding ${_provider.name} for you.\nYou\'ll be notified when they accept.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge,
             ).animate(delay: 300.ms).fadeIn(duration: 400.ms),
@@ -395,22 +397,22 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Booking ID', style: Theme.of(context).textTheme.bodySmall),
+                      Text(l10n.urdu == 'اردو' ? 'بکنگ آئی ڈی' : 'Booking ID', style: Theme.of(context).textTheme.bodySmall),
                       Text(_bookingId, style: TextStyle(fontWeight: FontWeight.w800, color: isDark ? AppTheme.primaryDark : AppTheme.primary, fontSize: 14)),
                     ],
                   ),
                   const SizedBox(height: 12),
                   const Divider(),
                   const SizedBox(height: 12),
-                  _BookingDetailRow('Worker', _provider.name, context, isDark),
+                  _BookingDetailRow(l10n.worker, _provider.name, context, isDark),
                   const SizedBox(height: 8),
-                  _BookingDetailRow('Service', _provider.category, context, isDark),
+                  _BookingDetailRow(l10n.services, _provider.category, context, isDark),
                   const SizedBox(height: 8),
-                  _BookingDetailRow('Location', 'G-13/4, Islamabad', context, isDark),
+                  _BookingDetailRow(l10n.urdu == 'اردو' ? 'لوکیشن' : 'Location', 'G-13/4, Islamabad', context, isDark),
                   const SizedBox(height: 8),
-                  _BookingDetailRow('Est. Cost', 'Rs. ${(_provider.rateAmount + 50).toStringAsFixed(0)}', context, isDark),
+                  _BookingDetailRow(l10n.urdu == 'اردو' ? 'متوقع قیمت' : 'Est. Cost', 'Rs. ${(_provider.rateAmount + 50).toStringAsFixed(0)}', context, isDark),
                   const SizedBox(height: 8),
-                  _BookingDetailRow('Payment', 'Cash on Delivery', context, isDark),
+                  _BookingDetailRow(l10n.urdu == 'اردو' ? 'طریقہ ادائیگی' : 'Payment', l10n.urdu == 'اردو' ? 'کیش آن ڈیلیوری' : 'Cash on Delivery', context, isDark),
                 ],
               ),
             ).animate(delay: 400.ms).fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
@@ -425,7 +427,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                 children: [
                   const Icon(Icons.map_rounded, size: 20),
                   const SizedBox(width: 8),
-                  const Text('Track Worker Live'),
+                  Text(l10n.trackingWorker),
                 ],
               ),
             ).animate(delay: 500.ms).fadeIn(duration: 400.ms),
@@ -434,7 +436,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
 
             OutlinedButton(
               onPressed: () => context.go('/dashboard/user'),
-              child: const Text('Back to Home'),
+              child: Text(l10n.home),
             ).animate(delay: 600.ms).fadeIn(duration: 400.ms),
           ],
         ),

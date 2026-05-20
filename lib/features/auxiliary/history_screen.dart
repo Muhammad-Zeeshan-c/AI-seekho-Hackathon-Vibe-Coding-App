@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/booking_model.dart';
 import '../../data/mock/mock_providers.dart';
+import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 
 /// User/Worker History Screen showing Past, Active, and Cancelled bookings
 class HistoryScreen extends StatefulWidget {
@@ -73,6 +74,7 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
@@ -89,7 +91,7 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
             child: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: AppTheme.textPrimary(context)),
           ),
         ),
-        title: Text('My Bookings', style: Theme.of(context).textTheme.titleLarge),
+        title: Text(l10n.urdu == 'اردو' ? 'میری بکنگز' : 'My Bookings', style: Theme.of(context).textTheme.titleLarge),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: isDark ? AppTheme.primaryDark : AppTheme.primary,
@@ -97,21 +99,25 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
           labelColor: isDark ? AppTheme.primaryDark : AppTheme.primary,
           unselectedLabelColor: AppTheme.textSecondary(context),
           labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-          tabs: const [Tab(text: 'Active'), Tab(text: 'Completed'), Tab(text: 'Cancelled')],
+          tabs: [
+            Tab(text: l10n.urdu == 'اردو' ? 'فعال' : 'Active'),
+            Tab(text: l10n.urdu == 'اردو' ? 'مکمل شدہ' : 'Completed'),
+            Tab(text: l10n.urdu == 'اردو' ? 'منسوخ شدہ' : 'Cancelled'),
+          ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildList(_activeBookings, isDark, isActive: true),
-          _buildList(_pastBookings, isDark),
-          _buildList(_cancelledBookings, isDark),
+          _buildList(_activeBookings, isDark, l10n, isActive: true),
+          _buildList(_pastBookings, isDark, l10n),
+          _buildList(_cancelledBookings, isDark, l10n),
         ],
       ),
     );
   }
 
-  Widget _buildList(List<Map<String, dynamic>> bookings, bool isDark, {bool isActive = false}) {
+  Widget _buildList(List<Map<String, dynamic>> bookings, bool isDark, AppLocalizations l10n, {bool isActive = false}) {
     if (bookings.isEmpty) {
       return Center(
         child: Column(
@@ -119,9 +125,14 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
           children: [
             Icon(Icons.receipt_long_outlined, size: 64, color: AppTheme.textSecondary(context).withOpacity(0.5)),
             const SizedBox(height: 16),
-            Text('No bookings found', style: Theme.of(context).textTheme.titleMedium),
+            Text(l10n.noHistory, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text('You have no ${isActive ? "active" : "past"} bookings.', style: Theme.of(context).textTheme.bodyMedium),
+            Text(
+              isActive
+                  ? (l10n.urdu == 'اردو' ? 'آپ کی کوئی فعال بکنگ نہیں ہے۔' : 'You have no active bookings.')
+                  : (l10n.urdu == 'اردو' ? 'آپ کی کوئی پرانی بکنگ نہیں ہے۔' : 'You have no past bookings.'),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ],
         ),
       );
@@ -136,6 +147,7 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
           booking: booking,
           isDark: isDark,
           isActive: isActive,
+          l10n: l10n,
           onTap: () {
             // Optionally navigate to details
           },
@@ -149,12 +161,14 @@ class _BookingCard extends StatelessWidget {
   final Map<String, dynamic> booking;
   final bool isDark;
   final bool isActive;
+  final AppLocalizations l10n;
   final VoidCallback onTap;
 
   const _BookingCard({
     required this.booking,
     required this.isDark,
     required this.isActive,
+    required this.l10n,
     required this.onTap,
   });
 
@@ -193,7 +207,11 @@ class _BookingCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    booking['status'],
+                    booking['status'] == 'Completed'
+                        ? (l10n.urdu == 'اردو' ? 'مکمل شدہ' : 'Completed')
+                        : booking['status'] == 'Cancelled'
+                            ? (l10n.urdu == 'اردو' ? 'منسوخ شدہ' : 'Cancelled')
+                            : (l10n.urdu == 'اردو' ? 'راستے میں ہے' : 'En Route'),
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: statusColor),
                   ),
                 ),
@@ -224,7 +242,7 @@ class _BookingCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text('Rs. ${booking['amount']}', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.textPrimary(context))),
-                    Text('Total', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary(context))),
+                    Text(l10n.urdu == 'اردو' ? 'کل رقم' : 'Total', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary(context))),
                   ],
                 ),
               ],
@@ -245,12 +263,12 @@ class _BookingCard extends StatelessWidget {
                 if (isActive)
                   GestureDetector(
                     onTap: () => context.push('/tracking?bookingId=${booking['id']}&providerId=PRV-001'),
-                    child: Text('Track live', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: isDark ? AppTheme.primaryDark : AppTheme.primary)),
+                    child: Text(l10n.urdu == 'اردو' ? 'لائیو ٹریک کریں' : 'Track live', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: isDark ? AppTheme.primaryDark : AppTheme.primary)),
                   )
                 else if (booking['status'] == 'Completed')
                   GestureDetector(
                     onTap: () => context.push('/rating?bookingId=${booking['id']}'),
-                    child: Text('Rate Service', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.accent)),
+                    child: Text(l10n.rateService, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.accent)),
                   ),
               ],
             ),

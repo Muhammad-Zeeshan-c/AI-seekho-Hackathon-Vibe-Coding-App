@@ -76,4 +76,115 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get profile => 'پروفائل';
+
+  @override
+  String get resultsTitle => 'دستیاب ورکرز';
+
+  @override
+  String get bookNow => 'بک کریں';
+
+  @override
+  String get viewProfile => 'پروفائل دیکھیں';
+
+  @override
+  String get providerDetails => 'ورکر کی تفصیلات';
+
+  @override
+  String get about => 'تعارف';
+
+  @override
+  String get reviews => 'جائزے';
+
+  @override
+  String get confirmBooking => 'بکنگ کی تصدیق کریں';
+
+  @override
+  String get totalAmount => 'کل رقم';
+
+  @override
+  String get liveTracking => 'لائیو ٹریکنگ';
+
+  @override
+  String get driverEnRoute => 'ورکر راستے میں ہے';
+
+  @override
+  String get eta => 'وقتِ آمد';
+
+  @override
+  String get mins => 'منٹ';
+
+  @override
+  String get workerDashboard => 'ورکر ڈیش بورڈ';
+
+  @override
+  String get earnings => 'آمدنی';
+
+  @override
+  String get newRequests => 'نئی درخواستیں';
+
+  @override
+  String get accept => 'قبول کریں';
+
+  @override
+  String get decline => 'مسترد کریں';
+
+  @override
+  String get rateService => 'سروس کو ریٹ کریں';
+
+  @override
+  String get submit => 'جمع کریں';
+
+  @override
+  String get reportIssue => 'مسئلہ رپورٹ کریں';
+
+  @override
+  String get history => 'ہسٹری';
+
+  @override
+  String get noHistory => 'کوئی ہسٹری نہیں ملی';
+
+  @override
+  String get portfolio => 'کام کا ریکارڈ';
+
+  @override
+  String get servicesOffered => 'پیش کردہ خدمات';
+
+  @override
+  String get feedbackTags => 'کلائنٹ کی رائے';
+
+  @override
+  String get ratingBreakdown => 'ریٹنگ کی تفصیل';
+
+  @override
+  String get cnicVerified => 'تصدیق شدہ شناختی کارڈ';
+
+  @override
+  String get requestNow => 'بکنگ کی درخواست کریں';
+
+  @override
+  String get yourLocation => 'آپ کی لوکیشن';
+
+  @override
+  String get whatsTheIssue => 'مسئلہ کیا ہے؟ (اختیاری)';
+
+  @override
+  String get paymentCOD => 'کیش آن ڈیلیوری (COD)';
+
+  @override
+  String get serviceFee => 'سروس فیس';
+
+  @override
+  String get platformFee => 'پلیٹ فارم فیس';
+
+  @override
+  String get estTotal => 'کل متوقع رقم';
+
+  @override
+  String get requestSent => 'درخواست بھیج دی گئی! 🎉';
+
+  @override
+  String get trackingWorker => 'ورکر کو لائیو ٹریک کریں';
+
+  @override
+  String get cancelBooking => 'بکنگ منسوخ کریں';
 }

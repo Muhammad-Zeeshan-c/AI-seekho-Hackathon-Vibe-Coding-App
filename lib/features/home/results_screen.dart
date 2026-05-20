@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/mock/mock_providers.dart';
 import '../../data/models/provider_model.dart';
+import 'package:new_ai_sekho_project/l10n/app_localizations.dart';
 
 /// Results / provider listing screen — on-demand, no time slots
 class ResultsScreen extends StatefulWidget {
@@ -49,6 +50,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
@@ -69,7 +71,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.category.isEmpty || widget.category == 'All' ? 'All Services' : widget.category,
+              widget.category.isEmpty || widget.category == 'All' ? l10n.services : widget.category,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             Text(
@@ -251,6 +253,7 @@ class _ProviderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // Mock ETA calculation based on coordinates
     final etaMin = ((provider.lat - 33.68).abs() * 80 + 8).round().clamp(5, 45);
 
@@ -468,7 +471,7 @@ class _ProviderCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            'Request',
+                            l10n.bookNow,
                             style: TextStyle(
                               color: isDark ? Colors.black : Colors.white,
                               fontWeight: FontWeight.w700,
